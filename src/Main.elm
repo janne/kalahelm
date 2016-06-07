@@ -49,22 +49,17 @@ newBoard =
 
 type Msg
     = Move Int
+    | MoveOpponent
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Move hole ->
-            let
-                model' =
-                    move hole model
-            in
-                ( if model'.player == 0 then
-                    model'
-                  else
-                    moveOpponent model'
-                , Cmd.none
-                )
+            ( move hole model, Cmd.none )
+
+        MoveOpponent ->
+            ( moveOpponent model, Cmd.none )
 
 
 get : Int -> Board -> Int
@@ -77,13 +72,29 @@ set n stones board =
     List.take n board ++ (stones :: List.drop (n + 1) board)
 
 
+kalaha : Model -> Int
+kalaha model =
+    if model.player == 0 then
+        6
+    else
+        13
+
+
+otherKalaha : Model -> Int
+otherKalaha model =
+    if model.player == 0 then
+        13
+    else
+        6
+
+
 incrementFrom : Int -> Int -> Model -> ( Model, Int )
 incrementFrom hole stones model =
     let
         board' =
             List.indexedMap
                 (\i a ->
-                    if i >= hole && i < hole + stones && i /= 13 then
+                    if i >= hole && i < hole + stones && i /= (otherKalaha model) then
                         a + 1
                     else
                         a
@@ -96,7 +107,7 @@ incrementFrom hole stones model =
         model' =
             { model | board = board' }
     in
-        if last > 12 then
+        if last > 13 then
             incrementFrom 0 (last - 12) model'
         else
             ( model', last )
@@ -117,10 +128,12 @@ steal hole model =
             get (opposite hole) model.board
 
         h3 =
-            get 6 model.board
+            get (kalaha model) model.board
 
         board =
-            set hole 0 model.board |> set (opposite hole) 0 |> set 6 (h1 + h2 + h3)
+            set hole 0 model.board
+                |> set (opposite hole) 0
+                |> set (kalaha model) (h1 + h2 + h3)
     in
         { model | board = board }
 
@@ -221,12 +234,19 @@ view model =
             td [ rowspan 2 ] [ text <| toString stones ]
 
         tdList list =
-            List.map (\stones -> td [] [ text <| toString stones ]) list
+            let
+                attrs stones =
+                    if stones > 0 && model.player == 1 then
+                        [ class "player-hole" ]
+                    else
+                        []
+            in
+                List.map (\stones -> td (attrs stones) [ text <| toString stones ]) list
 
         tdPlayerList list =
             let
                 playerAttrs i stones =
-                    if stones > 0 then
+                    if stones > 0 && model.player == 0 then
                         [ class "player-hole", onClick (Move i) ]
                     else
                         []
@@ -244,13 +264,20 @@ view model =
 
         holes2 =
             List.drop 1 (List.reverse (List.drop 7 model.board))
+
+        nextPlayer =
+            if model.player == 0 then
+                text ""
+            else
+                button [ onClick MoveOpponent ] [ text "Next" ]
     in
         div [ class "container" ]
-            [ h1 [] [ text <| "Kalahelm" ++ (toString model.player) ]
+            [ h1 [] [ text <| "Kalahelm" ]
             , table [ class "table table-bordered" ]
                 [ tbody []
                     [ tr [] ([ kalahaTd kalaha2 ] ++ (tdList holes2) ++ [ kalahaTd kalaha1 ])
                     , tr [] (tdPlayerList holes1)
                     ]
                 ]
+            , nextPlayer
             ]
