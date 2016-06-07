@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App as Html
+import Random
 
 
 main =
@@ -54,6 +55,7 @@ newBoard =
 type Msg
     = Move Int
     | MoveOpponent
+    | MoveOpponentRandom Int
     | Undo
 
 
@@ -64,7 +66,10 @@ update msg model =
             ( move hole model, Cmd.none )
 
         MoveOpponent ->
-            ( moveOpponent model, Cmd.none )
+            ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
+
+        MoveOpponentRandom rnd ->
+            ( moveOpponent rnd model, Cmd.none )
 
         Undo ->
             case model.previousBoard of
@@ -176,15 +181,17 @@ nextPlayer i =
     (i + 1) % 2
 
 
-moveOpponent : Model -> Model
-moveOpponent model =
+moveOpponent : Int -> Model -> Model
+moveOpponent rnd model =
     let
         indexedHoles =
             List.indexedMap (,) model.board
                 |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
 
+        drop = rnd % (List.length indexedHoles - 1)
+
     in
-        case List.head indexedHoles of
+        case List.drop drop indexedHoles |> List.head of
             Nothing ->
                 model
 
