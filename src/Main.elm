@@ -171,23 +171,6 @@ steal hole model =
         { model | board = board }
 
 
-detect : (a -> Bool) -> List a -> Maybe Int
-detect f list =
-    List.foldl
-        (\( i, new ) current ->
-            if current == Nothing then
-                (if f new then
-                    Just i
-                 else
-                    Nothing
-                )
-            else
-                current
-        )
-        Nothing
-        <| List.indexedMap (,) list
-
-
 nextPlayer : Int -> Int
 nextPlayer i =
     (i + 1) % 2
@@ -196,18 +179,17 @@ nextPlayer i =
 moveOpponent : Model -> Model
 moveOpponent model =
     let
-        holes =
-            List.drop 7 model.board
+        indexedHoles =
+            List.indexedMap (,) model.board
+                |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
 
-        maybeHole =
-            detect (\a -> a > 0) holes
     in
-        case maybeHole of
+        case List.head indexedHoles of
             Nothing ->
                 model
 
-            Just n ->
-                move (n + 7) model
+            Just (i, _) ->
+                move i model
 
 
 ownHole : Int -> Model -> Bool
