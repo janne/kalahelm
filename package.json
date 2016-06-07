@@ -1,0 +1,20 @@
+{
+  "name": "elm-webpack",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": "git@github.com:janne/elm-webpack.git",
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack-dev-server --hot --port 3000"
+  },
+  "dependencies": {
+    "css-loader": "^0.23.1",
+    "elm-hot-loader": "^0.3.2",
+    "elm-webpack-loader": "^3.0.2",
+    "file-loader": "^0.8.5",
+    "style-loader": "^0.13.1",
+    "tmp": "0.0.28",
+    "webpack": "^1.12.0",
+    "webpack-dev-server": "^1.14.0"
+  }
+}

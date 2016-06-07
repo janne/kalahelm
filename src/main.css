@@ -1,0 +1,16 @@
+.table { height: 200px; }
+
+td { text-align: center; }
+
+td.player-hole {
+    background: #efefef;
+    cursor: pointer;
+}
+
+td.player-hole:hover {
+    background: #ddd;
+}
+
+.table tbody>tr>td{
+    vertical-align: middle;
+}
