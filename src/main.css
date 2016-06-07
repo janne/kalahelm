@@ -2,12 +2,15 @@
 
 td { text-align: center; }
 
-td.player-hole {
+td.stones {
     background: #efefef;
+}
+
+td.playable {
     cursor: pointer;
 }
 
-td.player-hole:hover {
+td.playable:hover {
     background: #ddd;
 }
 

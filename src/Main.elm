@@ -237,7 +237,7 @@ view model =
             let
                 attrs stones =
                     if stones > 0 && model.player == 1 then
-                        [ class "player-hole" ]
+                        [ class "stones" ]
                     else
                         []
             in
@@ -247,7 +247,7 @@ view model =
             let
                 playerAttrs i stones =
                     if stones > 0 && model.player == 0 then
-                        [ class "player-hole", onClick (Move i) ]
+                        [ class "stones playable", onClick (Move i) ]
                     else
                         []
             in
