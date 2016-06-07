@@ -25,12 +25,14 @@ type alias Board =
 
 type alias Model =
     { board : Board
+    , player : Int
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { board = newBoard
+      , player = 0
       }
     , Cmd.none
     )
@@ -53,7 +55,16 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Move hole ->
-            ( { model | board = move hole model.board }, Cmd.none )
+            let
+                model' =
+                    move hole model
+            in
+                ( if model'.player == 0 then
+                    model'
+                  else
+                    moveOpponent model'
+                , Cmd.none
+                )
 
 
 get : Int -> Board -> Int
@@ -66,8 +77,8 @@ set n stones board =
     List.take n board ++ (stones :: List.drop (n + 1) board)
 
 
-incrementFrom : Int -> Int -> Board -> ( Board, Int )
-incrementFrom hole stones board =
+incrementFrom : Int -> Int -> Model -> ( Model, Int )
+incrementFrom hole stones model =
     let
         board' =
             List.indexedMap
@@ -77,15 +88,18 @@ incrementFrom hole stones board =
                     else
                         a
                 )
-                board
+                model.board
 
         last =
             stones + hole - 1
+
+        model' =
+            { model | board = board' }
     in
         if last > 12 then
-            incrementFrom 0 (last - 12) board'
+            incrementFrom 0 (last - 12) model'
         else
-            ( board', last )
+            ( model', last )
 
 
 opposite : Int -> Int
@@ -93,19 +107,22 @@ opposite hole =
     12 - hole
 
 
-steal : Int -> Board -> Board
-steal hole board =
+steal : Int -> Model -> Model
+steal hole model =
     let
         h1 =
-            get hole board
+            get hole model.board
 
         h2 =
-            get (opposite hole) board
+            get (opposite hole) model.board
 
         h3 =
-            get 6 board
+            get 6 model.board
+
+        board =
+            set hole 0 model.board |> set (opposite hole) 0 |> set 6 (h1 + h2 + h3)
     in
-        set 6 (h1 + h2 + h3) <| set (opposite hole) 0 (set hole 0 board)
+        { model | board = board }
 
 
 detect : (a -> Bool) -> List a -> Maybe Int
@@ -125,18 +142,23 @@ detect f list =
         <| List.indexedMap (,) list
 
 
-moveOpponent : Board -> Board
-moveOpponent board =
+nextPlayer : Int -> Int
+nextPlayer i =
+    (i + 1) % 2
+
+
+moveOpponent : Model -> Model
+moveOpponent model =
     let
         holes =
-            List.drop 7 board
+            List.drop 7 model.board
 
         move =
             detect (\a -> a > 0) holes
     in
         case move of
             Nothing ->
-                board
+                model
 
             Just n ->
                 let
@@ -144,39 +166,39 @@ moveOpponent board =
                         n + 7
 
                     stones =
-                        get hole board
+                        get hole model.board
 
                     board' =
-                        set hole 0 board
+                        set hole 0 model.board
 
-                    ( board'', last ) =
-                        incrementFrom (hole + 1) stones board'
+                    ( model', last ) =
+                        incrementFrom (hole + 1) stones { model | board = board' }
                 in
-                    board''
+                    { model' | player = (nextPlayer model.player) }
 
 
-move : Int -> Board -> Board
-move hole board =
+move : Int -> Model -> Model
+move hole model =
     let
         stones =
-            get hole board
+            get hole model.board
 
         board' =
-            set hole 0 board
+            set hole 0 model.board
 
-        ( board'', last ) =
-            incrementFrom (hole + 1) stones board'
+        ( model', last ) =
+            incrementFrom (hole + 1) stones { model | board = board' }
 
-        board''' =
-            if last >= 0 && last < 6 && get last board == 0 then
-                steal last board''
+        model'' =
+            if last >= 0 && last < 6 && get last model.board == 0 then
+                steal last model'
             else
-                board''
+                model'
     in
         if last /= 6 then
-            moveOpponent board'''
+            { model'' | player = (nextPlayer model.player) }
         else
-            board'''
+            model''
 
 
 
@@ -224,7 +246,7 @@ view model =
             List.drop 1 (List.reverse (List.drop 7 model.board))
     in
         div [ class "container" ]
-            [ h1 [] [ text "Kalahelm" ]
+            [ h1 [] [ text <| "Kalahelm" ++ (toString model.player) ]
             , table [ class "table table-bordered" ]
                 [ tbody []
                     [ tr [] ([ kalahaTd kalaha2 ] ++ (tdList holes2) ++ [ kalahaTd kalaha1 ])
