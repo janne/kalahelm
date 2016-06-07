@@ -88,29 +88,43 @@ otherKalaha model =
         6
 
 
-incrementFrom : Int -> Int -> Model -> ( Model, Int )
-incrementFrom hole stones model =
+stonesMissing : Model -> Int
+stonesMissing model =
+    36 - List.sum model.board
+
+
+incrementFrom : Int -> Model -> ( Model, Int )
+incrementFrom hole model =
     let
+        stones =
+            stonesMissing model
+
+        kalaha =
+            otherKalaha model
+
+        other =
+            if hole < kalaha && hole + stones >= kalaha then
+                1
+            else
+                0
+
         board' =
             List.indexedMap
                 (\i a ->
-                    if i >= hole && i < hole + stones && i /= (otherKalaha model) then
+                    if i >= hole && i < hole + stones + other && i /= kalaha then
                         a + 1
                     else
                         a
                 )
                 model.board
 
-        last =
-            stones + hole - 1
-
         model' =
             { model | board = board' }
     in
-        if last > 13 then
-            incrementFrom 0 (last - 12) model'
+        if stonesMissing model' > 0 then
+            incrementFrom 0 model'
         else
-            ( model', last )
+            ( model', stones + hole - 1 )
 
 
 opposite : Int -> Int
@@ -166,49 +180,41 @@ moveOpponent model =
         holes =
             List.drop 7 model.board
 
-        move =
+        maybeHole =
             detect (\a -> a > 0) holes
     in
-        case move of
+        case maybeHole of
             Nothing ->
                 model
 
             Just n ->
-                let
-                    hole =
-                        n + 7
+                move (n + 7) model
 
-                    stones =
-                        get hole model.board
 
-                    board' =
-                        set hole 0 model.board
-
-                    ( model', last ) =
-                        incrementFrom (hole + 1) stones { model | board = board' }
-                in
-                    { model' | player = (nextPlayer model.player) }
+ownHole : Int -> Model -> Bool
+ownHole hole model =
+    if model.player == 0 then
+        hole >= 0 && hole < 6
+    else
+        hole >= 7 && hole < 13
 
 
 move : Int -> Model -> Model
 move hole model =
     let
-        stones =
-            get hole model.board
-
         board' =
             set hole 0 model.board
 
         ( model', last ) =
-            incrementFrom (hole + 1) stones { model | board = board' }
+            incrementFrom (hole + 1) { model | board = board' }
 
         model'' =
-            if last >= 0 && last < 6 && get last model.board == 0 then
+            if (ownHole last model) && get last model.board == 0 then
                 steal last model'
             else
                 model'
     in
-        if last /= 6 then
+        if last /= (kalaha model) then
             { model'' | player = (nextPlayer model.player) }
         else
             model''
