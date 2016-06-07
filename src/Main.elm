@@ -26,6 +26,8 @@ type alias Board =
 type alias Model =
     { board : Board
     , player : Int
+    , previousBoard : Maybe Board
+    , previousPlayer : Int
     }
 
 
@@ -33,6 +35,8 @@ init : ( Model, Cmd Msg )
 init =
     ( { board = newBoard
       , player = 0
+      , previousBoard = Nothing
+      , previousPlayer = 0
       }
     , Cmd.none
     )
@@ -50,6 +54,7 @@ newBoard =
 type Msg
     = Move Int
     | MoveOpponent
+    | Undo
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -60,6 +65,20 @@ update msg model =
 
         MoveOpponent ->
             ( moveOpponent model, Cmd.none )
+
+        Undo ->
+            case model.previousBoard of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just previousBoard ->
+                    ( { model
+                        | board = previousBoard
+                        , previousBoard = Nothing
+                        , player = model.previousPlayer
+                      }
+                    , Cmd.none
+                    )
 
 
 get : Int -> Board -> Int
@@ -206,7 +225,12 @@ move hole model =
             set hole 0 model.board
 
         ( model', last ) =
-            incrementFrom (hole + 1) { model | board = board' }
+            incrementFrom (hole + 1)
+                { model
+                    | previousBoard = Just model.board
+                    , previousPlayer = model.player
+                    , board = board'
+                }
 
         model'' =
             if (ownHole last model) && get last model.board == 0 then
@@ -271,11 +295,17 @@ view model =
         holes2 =
             List.drop 1 (List.reverse (List.drop 7 model.board))
 
-        nextPlayer =
+        nextButton =
             if model.player == 0 then
                 text ""
             else
-                button [ onClick MoveOpponent ] [ text "Next" ]
+                button [ class "btn btn-primary", onClick MoveOpponent ] [ text "Next" ]
+
+        undoButton =
+            if model.previousBoard == Nothing then
+                text ""
+            else
+                button [ class "btn btn-default", onClick Undo ] [ text "Undo" ]
     in
         div [ class "container" ]
             [ h1 [] [ text <| "Kalahelm" ]
@@ -285,5 +315,5 @@ view model =
                     , tr [] (tdPlayerList holes1)
                     ]
                 ]
-            , nextPlayer
+            , div [ class "btn-group" ] [ nextButton, undoButton ]
             ]
