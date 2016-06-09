@@ -27,7 +27,14 @@ type alias Board =
 type alias Move =
     { board : Board
     , player : Int
+    , winner : Maybe Winner
     }
+
+
+type Winner
+    = Player
+    | Opponent
+    | Draw
 
 
 type alias Model =
@@ -43,7 +50,7 @@ init =
 
 initMove : Move
 initMove =
-    { board = initBoard, player = 0 }
+    { board = initBoard, player = 0, winner = Nothing }
 
 
 initBoard : Board
@@ -56,7 +63,8 @@ initBoard =
 
 
 type Msg
-    = NextMove Int
+    = Init
+    | NextMove Int
     | MoveOpponent
     | MoveOpponentRandom Int
     | Undo
@@ -65,6 +73,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Init ->
+            init
+
         NextMove hole ->
             ( { model
                 | previousMove = Just model.move
@@ -196,7 +207,7 @@ moveOpponent rnd move =
                 |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
 
         drop =
-            rnd % (List.length indexedHoles - 1)
+            rnd % List.length indexedHoles
     in
         case List.drop drop indexedHoles |> List.head of
             Nothing ->
@@ -214,6 +225,58 @@ ownHole hole move =
         hole >= 7 && hole < 13
 
 
+winner : Move -> Move
+winner move =
+    { move
+        | winner =
+            Just
+                (case compare (kalahaPlayer move) (kalahaOpponent move) of
+                    LT ->
+                        Opponent
+
+                    EQ ->
+                        Draw
+
+                    GT ->
+                        Player
+                )
+    }
+
+
+checkWinner : Move -> Move
+checkWinner move =
+    if List.sum (List.take 6 move.board) == 0 then
+        winner
+            { move
+                | board =
+                    List.repeat 6 0
+                        ++ [ kalahaPlayer move ]
+                        ++ List.repeat 6 0
+                        ++ [ 36 - kalahaPlayer move ]
+            }
+    else if List.sum (List.drop 7 move.board |> List.take 6) == 0 then
+        winner
+            { move
+                | board =
+                    List.repeat 6 0
+                        ++ [ 36 - kalahaOpponent move ]
+                        ++ List.repeat 6 0
+                        ++ [ kalahaOpponent move ]
+            }
+    else
+        move
+
+
+kalahaPlayer : Move -> Int
+kalahaPlayer move =
+    get 6 move.board
+
+
+kalahaOpponent : Move -> Int
+kalahaOpponent move =
+    get 13 move.board
+
+
 nextMove : Int -> Move -> Move
 nextMove hole move =
     let
@@ -228,11 +291,14 @@ nextMove hole move =
                 steal last move'
             else
                 move'
+
+        move''' =
+            checkWinner move''
     in
-        if last /= (kalaha move) then
-            { move'' | player = (nextPlayer move.player) }
+        if last /= kalaha move then
+            { move''' | player = nextPlayer move.player }
         else
-            move''
+            move'''
 
 
 
@@ -274,23 +340,33 @@ view model =
             in
                 List.indexedMap (\i stones -> td (playerAttrs i stones) [ text <| toString stones ]) list
 
-        kalaha1 =
-            get 6 model.move.board
-
-        kalaha2 =
-            get 13 model.move.board
-
         holes1 =
             List.take 6 model.move.board
 
         holes2 =
             List.drop 1 (List.reverse (List.drop 7 model.move.board))
 
+        title winner =
+            case winner of
+                Nothing ->
+                    "Kalaha"
+
+                Just Player ->
+                    "Game over, winner was: Human"
+
+                Just Opponent ->
+                    "Game over, winner was: Computer"
+
+                Just Draw ->
+                    "Game over, it was a draw"
+
         nextButton =
-            if model.move.player == 0 then
-                text ""
-            else
+            if model.move.winner /= Nothing then
+                button [ class "btn btn-primary", onClick Init ] [ text "Restart" ]
+            else if model.move.player == 1 then
                 button [ class "btn btn-primary", onClick MoveOpponent ] [ text "Next" ]
+            else
+                text ""
 
         undoButton =
             if model.previousMove == Nothing then
@@ -299,12 +375,22 @@ view model =
                 button [ class "btn btn-default", onClick Undo ] [ text "Undo" ]
     in
         div [ class "container" ]
-            [ h1 [] [ text <| "Kalahelm" ]
+            [ h1 [] [ text <| title model.move.winner ]
             , table [ class "table table-bordered" ]
                 [ tbody []
-                    [ tr [] ([ kalahaTd kalaha2 ] ++ (tdList holes2) ++ [ kalahaTd kalaha1 ])
+                    [ tr [] ([ kalahaTd <| kalahaOpponent model.move ] ++ (tdList holes2) ++ [ kalahaTd <| kalahaPlayer model.move ])
                     , tr [] (tdPlayerList holes1)
                     ]
                 ]
             , div [ class "btn-group" ] [ nextButton, undoButton ]
             ]
+
+
+playerName : Move -> String
+playerName move =
+    case move.player of
+        0 ->
+            "Human"
+
+        _ ->
+            "Computer"
