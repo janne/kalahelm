@@ -24,27 +24,30 @@ type alias Board =
     List Int
 
 
-type alias Model =
+type alias Move =
     { board : Board
     , player : Int
-    , previousBoard : Maybe Board
-    , previousPlayer : Int
+    }
+
+
+type alias Model =
+    { move : Move
+    , previousMove : Maybe Move
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { board = newBoard
-      , player = 0
-      , previousBoard = Nothing
-      , previousPlayer = 0
-      }
-    , Cmd.none
-    )
+    ( { move = initMove, previousMove = Nothing }, Cmd.none )
 
 
-newBoard : Board
-newBoard =
+initMove : Move
+initMove =
+    { board = initBoard, player = 0 }
+
+
+initBoard : Board
+initBoard =
     [ 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3, 3, 0 ]
 
 
@@ -53,7 +56,7 @@ newBoard =
 
 
 type Msg
-    = Move Int
+    = NextMove Int
     | MoveOpponent
     | MoveOpponentRandom Int
     | Undo
@@ -62,28 +65,32 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Move hole ->
-            ( move hole model, Cmd.none )
+        NextMove hole ->
+            ( { model
+                | previousMove = Just model.move
+                , move = nextMove hole model.move
+              }
+            , Cmd.none
+            )
 
         MoveOpponent ->
             ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
 
         MoveOpponentRandom rnd ->
-            ( moveOpponent rnd model, Cmd.none )
+            ( { model
+                | previousMove = Just model.move
+                , move = moveOpponent rnd model.move
+              }
+            , Cmd.none
+            )
 
         Undo ->
-            case model.previousBoard of
+            case model.previousMove of
                 Nothing ->
                     ( model, Cmd.none )
 
-                Just previousBoard ->
-                    ( { model
-                        | board = previousBoard
-                        , previousBoard = Nothing
-                        , player = model.previousPlayer
-                      }
-                    , Cmd.none
-                    )
+                Just previousMove ->
+                    ( { model | move = previousMove, previousMove = Nothing }, Cmd.none )
 
 
 get : Int -> Board -> Int
@@ -96,35 +103,35 @@ set n stones board =
     List.take n board ++ (stones :: List.drop (n + 1) board)
 
 
-kalaha : Model -> Int
-kalaha model =
-    if model.player == 0 then
+kalaha : Move -> Int
+kalaha move =
+    if move.player == 0 then
         6
     else
         13
 
 
-otherKalaha : Model -> Int
-otherKalaha model =
-    if model.player == 0 then
+otherKalaha : Move -> Int
+otherKalaha move =
+    if move.player == 0 then
         13
     else
         6
 
 
-stonesMissing : Model -> Int
-stonesMissing model =
-    36 - List.sum model.board
+stonesMissing : Move -> Int
+stonesMissing move =
+    36 - List.sum move.board
 
 
-incrementFrom : Int -> Model -> ( Model, Int )
-incrementFrom hole model =
+incrementFrom : Int -> Move -> ( Move, Int )
+incrementFrom hole move =
     let
         stones =
-            stonesMissing model
+            stonesMissing move
 
         kalaha =
-            otherKalaha model
+            otherKalaha move
 
         other =
             if hole < kalaha && hole + stones >= kalaha then
@@ -140,15 +147,15 @@ incrementFrom hole model =
                     else
                         a
                 )
-                model.board
+                move.board
 
-        model' =
-            { model | board = board' }
+        move' =
+            { move | board = board' }
     in
-        if stonesMissing model' > 0 then
-            incrementFrom 0 model'
+        if stonesMissing move' > 0 then
+            incrementFrom 0 move'
         else
-            ( model', stones + hole - 1 )
+            ( move', stones + hole - 1 )
 
 
 opposite : Int -> Int
@@ -156,24 +163,24 @@ opposite hole =
     12 - hole
 
 
-steal : Int -> Model -> Model
-steal hole model =
+steal : Int -> Move -> Move
+steal hole move =
     let
         h1 =
-            get hole model.board
+            get hole move.board
 
         h2 =
-            get (opposite hole) model.board
+            get (opposite hole) move.board
 
         h3 =
-            get (kalaha model) model.board
+            get (kalaha move) move.board
 
         board =
-            set hole 0 model.board
+            set hole 0 move.board
                 |> set (opposite hole) 0
-                |> set (kalaha model) (h1 + h2 + h3)
+                |> set (kalaha move) (h1 + h2 + h3)
     in
-        { model | board = board }
+        { move | board = board }
 
 
 nextPlayer : Int -> Int
@@ -181,56 +188,51 @@ nextPlayer i =
     (i + 1) % 2
 
 
-moveOpponent : Int -> Model -> Model
-moveOpponent rnd model =
+moveOpponent : Int -> Move -> Move
+moveOpponent rnd move =
     let
         indexedHoles =
-            List.indexedMap (,) model.board
+            List.indexedMap (,) move.board
                 |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
 
-        drop = rnd % (List.length indexedHoles - 1)
-
+        drop =
+            rnd % (List.length indexedHoles - 1)
     in
         case List.drop drop indexedHoles |> List.head of
             Nothing ->
-                model
+                move
 
-            Just (i, _) ->
-                move i model
+            Just ( i, _ ) ->
+                nextMove i move
 
 
-ownHole : Int -> Model -> Bool
-ownHole hole model =
-    if model.player == 0 then
+ownHole : Int -> Move -> Bool
+ownHole hole move =
+    if move.player == 0 then
         hole >= 0 && hole < 6
     else
         hole >= 7 && hole < 13
 
 
-move : Int -> Model -> Model
-move hole model =
+nextMove : Int -> Move -> Move
+nextMove hole move =
     let
         board' =
-            set hole 0 model.board
+            set hole 0 move.board
 
-        ( model', last ) =
-            incrementFrom (hole + 1)
-                { model
-                    | previousBoard = Just model.board
-                    , previousPlayer = model.player
-                    , board = board'
-                }
+        ( move', last ) =
+            incrementFrom (hole + 1) { move | board = board' }
 
-        model'' =
-            if (ownHole last model) && get last model.board == 0 then
-                steal last model'
+        move'' =
+            if (ownHole last move) && get last move.board == 0 then
+                steal last move'
             else
-                model'
+                move'
     in
-        if last /= (kalaha model) then
-            { model'' | player = (nextPlayer model.player) }
+        if last /= (kalaha move) then
+            { move'' | player = (nextPlayer move.player) }
         else
-            model''
+            move''
 
 
 
@@ -255,7 +257,7 @@ view model =
         tdList list =
             let
                 attrs stones =
-                    if stones > 0 && model.player == 1 then
+                    if stones > 0 && model.move.player == 1 then
                         [ class "stones" ]
                     else
                         []
@@ -265,33 +267,33 @@ view model =
         tdPlayerList list =
             let
                 playerAttrs i stones =
-                    if stones > 0 && model.player == 0 then
-                        [ class "stones playable", onClick (Move i) ]
+                    if stones > 0 && model.move.player == 0 then
+                        [ class "stones playable", onClick (NextMove i) ]
                     else
                         []
             in
                 List.indexedMap (\i stones -> td (playerAttrs i stones) [ text <| toString stones ]) list
 
         kalaha1 =
-            get 6 model.board
+            get 6 model.move.board
 
         kalaha2 =
-            get 13 model.board
+            get 13 model.move.board
 
         holes1 =
-            List.take 6 model.board
+            List.take 6 model.move.board
 
         holes2 =
-            List.drop 1 (List.reverse (List.drop 7 model.board))
+            List.drop 1 (List.reverse (List.drop 7 model.move.board))
 
         nextButton =
-            if model.player == 0 then
+            if model.move.player == 0 then
                 text ""
             else
                 button [ class "btn btn-primary", onClick MoveOpponent ] [ text "Next" ]
 
         undoButton =
-            if model.previousBoard == Nothing then
+            if model.previousMove == Nothing then
                 text ""
             else
                 button [ class "btn btn-default", onClick Undo ] [ text "Undo" ]
