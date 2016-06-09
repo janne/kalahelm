@@ -106,12 +106,14 @@ update msg model =
 
 get : Int -> Board -> Int
 get n list =
-    Maybe.withDefault 0 <| List.head (List.drop n list)
+    list |> List.drop n |> List.head |> Maybe.withDefault 0
 
 
 set : Int -> Int -> Board -> Board
 set n stones board =
-    List.take n board ++ (stones :: List.drop (n + 1) board)
+    List.take n board
+        ++ [ stones ]
+        ++ List.drop (n + 1) board
 
 
 kalaha : Move -> Int
@@ -150,18 +152,14 @@ incrementFrom hole move =
             else
                 0
 
-        board' =
-            List.indexedMap
-                (\i a ->
-                    if i >= hole && i < hole + stones + other && i /= kalaha then
-                        a + 1
-                    else
-                        a
-                )
-                move.board
+        incrementRange idx value =
+            if idx >= hole && idx < hole + stones + other && idx /= kalaha then
+                value + 1
+            else
+                value
 
         move' =
-            { move | board = board' }
+            { move | board = List.indexedMap incrementRange move.board }
     in
         if stonesMissing move' > 0 then
             incrementFrom 0 move'
@@ -185,18 +183,21 @@ steal hole move =
 
         h3 =
             get (kalaha move) move.board
-
-        board =
-            set hole 0 move.board
-                |> set (opposite hole) 0
-                |> set (kalaha move) (h1 + h2 + h3)
     in
-        { move | board = board }
+        { move
+            | board =
+                set hole 0 move.board
+                    |> set (opposite hole) 0
+                    |> set (kalaha move) (h1 + h2 + h3)
+        }
 
 
-nextPlayer : Int -> Int
-nextPlayer i =
-    (i + 1) % 2
+nextPlayer : Int -> Move -> Move
+nextPlayer hole move =
+    if hole /= kalaha move then
+        { move | player = (move.player + 1) % 2 }
+    else
+        move
 
 
 moveOpponent : Int -> Move -> Move
@@ -280,25 +281,17 @@ kalahaOpponent move =
 nextMove : Int -> Move -> Move
 nextMove hole move =
     let
-        board' =
-            set hole 0 move.board
-
         ( move', last ) =
-            incrementFrom (hole + 1) { move | board = board' }
+            { move | board = set hole 0 move.board }
+                |> incrementFrom (hole + 1)
 
         move'' =
             if (ownHole last move) && get last move.board == 0 then
                 steal last move'
             else
                 move'
-
-        move''' =
-            checkWinner move''
     in
-        if last /= kalaha move then
-            { move''' | player = nextPlayer move.player }
-        else
-            move'''
+        checkWinner move'' |> nextPlayer last
 
 
 
@@ -344,7 +337,10 @@ view model =
             List.take 6 model.move.board
 
         holes2 =
-            List.drop 1 (List.reverse (List.drop 7 model.move.board))
+            model.move.board
+                |> List.drop 7
+                |> List.reverse
+                |> List.drop 1
 
         title winner =
             case winner of
