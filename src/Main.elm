@@ -307,41 +307,9 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
-view model =
+viewTitle : Model -> Html Msg
+viewTitle model =
     let
-        kalahaTd stones =
-            td [ rowspan 2 ] [ text <| toString stones ]
-
-        tdList list =
-            let
-                attrs stones =
-                    if stones > 0 && model.move.player == 1 then
-                        [ class "stones" ]
-                    else
-                        []
-            in
-                List.map (\stones -> td (attrs stones) [ text <| toString stones ]) list
-
-        tdPlayerList list =
-            let
-                playerAttrs i stones =
-                    if stones > 0 && model.move.player == 0 then
-                        [ class "stones playable", onClick (NextMove i) ]
-                    else
-                        []
-            in
-                List.indexedMap (\i stones -> td (playerAttrs i stones) [ text <| toString stones ]) list
-
-        holes1 =
-            List.take 6 model.move.board
-
-        holes2 =
-            model.move.board
-                |> List.drop 7
-                |> List.reverse
-                |> List.drop 1
-
         title winner =
             case winner of
                 Nothing ->
@@ -355,38 +323,92 @@ view model =
 
                 Just Draw ->
                     "Game over, it was a draw"
-
-        nextButton =
-            if model.move.winner /= Nothing then
-                button [ class "btn btn-primary", onClick Init ] [ text "Restart" ]
-            else if model.move.player == 1 then
-                button [ class "btn btn-primary", onClick MoveOpponent ] [ text "Next" ]
-            else
-                text ""
-
-        undoButton =
-            if model.previousMove == Nothing then
-                text ""
-            else
-                button [ class "btn btn-default", onClick Undo ] [ text "Undo" ]
     in
-        div [ class "container" ]
-            [ h1 [] [ text <| title model.move.winner ]
-            , table [ class "table table-bordered" ]
-                [ tbody []
-                    [ tr [] ([ kalahaTd <| kalahaOpponent model.move ] ++ (tdList holes2) ++ [ kalahaTd <| kalahaPlayer model.move ])
-                    , tr [] (tdPlayerList holes1)
-                    ]
+        h1 [] [ text <| title model.move.winner ]
+
+
+viewBoard : Model -> Html Msg
+viewBoard model =
+    let
+        holes1 =
+            List.take 6 model.move.board
+
+        holes2 =
+            model.move.board
+                |> List.drop 7
+                |> List.reverse
+                |> List.drop 1
+
+        tdPlayerList list =
+            let
+                playerAttrs i stones =
+                    if stones > 0 && model.move.player == 0 then
+                        [ class "stones playable", onClick (NextMove i) ]
+                    else
+                        []
+            in
+                List.indexedMap (\i stones -> td (playerAttrs i stones) [ text <| toString stones ]) list
+
+        kalahaTd stones =
+            td [ rowspan 2 ] [ text <| toString stones ]
+
+        tdList list =
+            let
+                attrs stones =
+                    if stones > 0 && model.move.player == 1 then
+                        [ class "stones" ]
+                    else
+                        []
+            in
+                List.map (\stones -> td (attrs stones) [ text <| toString stones ]) list
+    in
+        table [ class "table table-bordered" ]
+            [ tbody []
+                [ tr [] ([ kalahaTd <| kalahaOpponent model.move ] ++ (tdList holes2) ++ [ kalahaTd <| kalahaPlayer model.move ])
+                , tr [] (tdPlayerList holes1)
                 ]
-            , div [ class "btn-group" ] [ nextButton, undoButton ]
             ]
 
 
-playerName : Move -> String
-playerName move =
-    case move.player of
-        0 ->
-            "Human"
+viewButtons : Model -> Html Msg
+viewButtons model =
+    let
+        drawButton : Msg -> String -> Bool -> Maybe (Html Msg)
+        drawButton msg title primary =
+            let
+                cl =
+                    if primary then
+                        "btn btn-primary"
+                    else
+                        "btn btn-default"
 
-        _ ->
-            "Computer"
+                view =
+                    button [ class cl, onClick msg ] [ text title ]
+            in
+                Just view
+
+        nextButton =
+            if model.move.winner /= Nothing then
+                drawButton Init "Restart" True
+            else if model.move.player == 1 then
+                drawButton MoveOpponent "Next" True
+            else
+                Nothing
+
+        undoButton =
+            if model.previousMove == Nothing then
+                Nothing
+            else
+                drawButton Undo "Undo" False
+    in
+        div [ class "btn-group" ]
+            (List.filterMap identity [ nextButton, undoButton ])
+
+
+view : Model -> Html Msg
+view model =
+    div [ class "container" ]
+        [ viewTitle model
+        , viewBoard model
+        , viewButtons model
+        ]
