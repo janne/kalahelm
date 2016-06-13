@@ -67,6 +67,10 @@ initBoard =
     [ 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3, 3, 0 ]
 
 
+animating model =
+    List.isEmpty model.steps |> not
+
+
 
 -- UPDATE
 
@@ -432,8 +436,8 @@ viewBoard model =
 viewButtons : Model -> Html Msg
 viewButtons model =
     let
-        drawButton : Msg -> String -> Bool -> Maybe (Html Msg)
-        drawButton msg title primary =
+        drawButton : Msg -> String -> Bool -> Bool -> Maybe (Html Msg)
+        drawButton msg title primary disabled =
             let
                 cl =
                     if primary then
@@ -442,28 +446,28 @@ viewButtons model =
                         "btn btn-default"
 
                 view =
-                    button [ Attr.class cl, onClick msg ] [ text title ]
+                    button [ Attr.class cl, Attr.disabled disabled, onClick msg ] [ text title ]
             in
                 Just view
 
-        nextButton : Maybe (Html Msg)
-        nextButton =
+        nextButton : Bool -> Maybe (Html Msg)
+        nextButton disabled =
             if model.move.winner /= Nothing then
-                drawButton Init "Restart" True
+                drawButton Init "Restart" True disabled
             else if model.move.player == 1 then
-                drawButton MoveOpponent "Next" True
+                drawButton MoveOpponent "Next" True disabled
             else
                 Nothing
 
-        undoButton : Maybe (Html Msg)
-        undoButton =
+        undoButton : Bool -> Maybe (Html Msg)
+        undoButton disabled =
             if model.previousMove == Nothing then
                 Nothing
             else
-                drawButton Undo "Undo" False
+                drawButton Undo "Undo" False disabled
     in
         div [ Attr.class "btn-group" ]
-            (List.filterMap identity [ nextButton, undoButton ])
+            (List.filterMap identity [ nextButton (animating model), undoButton (animating model) ])
 
 
 view : Model -> Html Msg
