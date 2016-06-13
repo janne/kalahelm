@@ -1,10 +1,12 @@
 module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes as Attr
 import Html.Events exposing (..)
 import Html.App as Html
 import Random
+import Svg
+import Svg.Attributes exposing (..)
 
 
 main =
@@ -339,35 +341,30 @@ viewBoard model =
                 |> List.reverse
                 |> List.drop 1
 
-        tdPlayerList list =
-            let
-                playerAttrs i stones =
-                    if stones > 0 && model.move.player == 0 then
-                        [ class "stones playable", onClick (NextMove i) ]
-                    else
-                        []
-            in
-                List.indexedMap (\i stones -> td (playerAttrs i stones) [ text <| toString stones ]) list
+        playerAttrs i stones =
+            if stones > 0 && model.move.player == 0 then
+                [ class "stones playable", onClick (NextMove i) ]
+            else
+                []
 
-        kalahaTd stones =
-            td [ rowspan 2 ] [ text <| toString stones ]
-
-        tdList list =
-            let
-                attrs stones =
-                    if stones > 0 && model.move.player == 1 then
-                        [ class "stones" ]
-                    else
-                        []
-            in
-                List.map (\stones -> td (attrs stones) [ text <| toString stones ]) list
+        opponentAttrs i stones =
+            if stones > 0 then
+                [ class "stones" ]
+            else
+                []
     in
-        table [ class "table table-bordered" ]
-            [ tbody []
-                [ tr [] ([ kalahaTd <| kalahaOpponent model.move ] ++ (tdList holes2) ++ [ kalahaTd <| kalahaPlayer model.move ])
-                , tr [] (tdPlayerList holes1)
-                ]
-            ]
+        Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
+            ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10" ] []
+             , Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40" ] []
+             , Svg.text' [ x "50", y "105", textAnchor "middle" ] [ kalahaOpponent model.move |> toString |> text ]
+             , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40" ] []
+             , Svg.text' [ x "750", y "105", textAnchor "middle" ] [ kalahaPlayer model.move |> toString |> text ]
+             ]
+                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40" ] ++ (opponentAttrs i cnt)) []) holes2)
+                ++ (List.indexedMap (\i cnt -> Svg.text' [ x (100 * i + 150 |> toString), y "55", textAnchor "middle" ] [ cnt |> toString |> text ]) holes2)
+                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40" ] ++ (playerAttrs i cnt)) []) holes1)
+                ++ (List.indexedMap (\i cnt -> Svg.text' [ x (100 * i + 150 |> toString), y "155", textAnchor "middle" ] [ cnt |> toString |> text ]) holes1)
+            )
 
 
 viewButtons : Model -> Html Msg
@@ -383,7 +380,7 @@ viewButtons model =
                         "btn btn-default"
 
                 view =
-                    button [ class cl, onClick msg ] [ text title ]
+                    button [ Attr.class cl, onClick msg ] [ text title ]
             in
                 Just view
 
@@ -401,13 +398,13 @@ viewButtons model =
             else
                 drawButton Undo "Undo" False
     in
-        div [ class "btn-group" ]
+        div [ Attr.class "btn-group" ]
             (List.filterMap identity [ nextButton, undoButton ])
 
 
 view : Model -> Html Msg
 view model =
-    div [ class "container" ]
+    div [ Attr.class "container" ]
         [ viewTitle model
         , viewBoard model
         , viewButtons model

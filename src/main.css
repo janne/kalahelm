@@ -2,16 +2,16 @@
 
 td { text-align: center; }
 
-td.stones {
-    background: #efefef;
+.stones {
+    fill: #efefef;
 }
 
-td.playable {
+.playable {
     cursor: pointer;
 }
 
-td.playable:hover {
-    background: #ddd;
+.playable:hover {
+    fill: #ddd;
 }
 
 .table tbody>tr>td{
