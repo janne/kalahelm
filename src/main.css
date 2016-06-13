@@ -11,7 +11,7 @@ td { text-align: center; }
 }
 
 .playable:hover {
-    fill: #ddd;
+    fill: #aaa;
 }
 
 .table tbody>tr>td{

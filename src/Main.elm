@@ -373,7 +373,7 @@ viewBoard model =
                     []
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
-            ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10" ] [] ]
+            ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
                 ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent model.move - 1]
                 ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer model.move - 1]
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 55 ) i) [0..cnt - 1]) holes2)
