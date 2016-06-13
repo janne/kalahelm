@@ -5,8 +5,10 @@ import Html.Attributes as Attr
 import Html.Events exposing (..)
 import Html.App as Html
 import Random
-import Svg
+import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
+import AnimationFrame
+import Ease
 
 
 main =
@@ -26,6 +28,10 @@ type alias Board =
     List Int
 
 
+type alias Pos =
+    ( Int, Int )
+
+
 type alias Move =
     { board : Board
     , player : Int
@@ -42,12 +48,13 @@ type Winner
 type alias Model =
     { move : Move
     , previousMove : Maybe Move
+    , steps : List (List ( Int, Int ))
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { move = initMove, previousMove = Nothing }, Cmd.none )
+    ( { move = initMove, previousMove = Nothing, steps = [ [] ] }, Cmd.none )
 
 
 initMove : Move
@@ -70,6 +77,7 @@ type Msg
     | MoveOpponent
     | MoveOpponentRandom Int
     | Undo
+    | Tick
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -79,23 +87,13 @@ update msg model =
             init
 
         NextMove hole ->
-            ( { model
-                | previousMove = Just model.move
-                , move = nextMove hole model.move
-              }
-            , Cmd.none
-            )
+            ( animate (nextMove hole model.move) model, Cmd.none )
 
         MoveOpponent ->
             ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
 
         MoveOpponentRandom rnd ->
-            ( { model
-                | previousMove = Just model.move
-                , move = moveOpponent rnd model.move
-              }
-            , Cmd.none
-            )
+            ( animate (moveOpponent rnd model.move) model, Cmd.none )
 
         Undo ->
             case model.previousMove of
@@ -104,6 +102,41 @@ update msg model =
 
                 Just previousMove ->
                     ( { model | move = previousMove, previousMove = Nothing }, Cmd.none )
+
+        Tick ->
+            ( step model, Cmd.none )
+
+
+animateSteps : Pos -> Pos -> List Pos
+animateSteps ( x, y ) ( x', y' ) =
+    let
+        n =
+            50
+
+        steps =
+            List.map (\i -> Ease.outQuad (i / n)) [0..n]
+
+        dx =
+            x' - x |> toFloat
+
+        dy =
+            y' - y |> toFloat
+    in
+        List.map (\f -> ( round (dx * f) + x, round (dy * f) + y )) steps
+
+
+animate : Move -> Model -> Model
+animate move model =
+    { model | previousMove = Just model.move, move = move, steps = [ animateSteps ( 750, 50 ) ( 50, 150 ), animateSteps ( 50, 50 ) ( 750, 150 ) ] }
+
+
+step : Model -> Model
+step model =
+    let
+        tails =
+            List.filterMap List.tail model.steps
+    in
+        { model | steps = tails }
 
 
 get : Int -> Board -> Int
@@ -302,7 +335,7 @@ nextMove hole move =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    AnimationFrame.diffs (always Tick)
 
 
 
@@ -341,18 +374,33 @@ viewBoard model =
                 |> List.reverse
                 |> List.drop 1
 
+        playerAttrs : Int -> Int -> List (Html.Attribute Msg)
         playerAttrs i stones =
             if stones > 0 && model.move.player == 0 then
                 [ class "stones playable", onClick (NextMove i) ]
             else
                 []
 
-        opponentAttrs i stones =
+        opponentAttrs : Int -> List (Html.Attribute Msg)
+        opponentAttrs stones =
             if stones > 0 then
                 [ class "stones" ]
             else
                 []
 
+        animatedStone : Model -> List (Svg Msg)
+        animatedStone model =
+            let
+                positions =
+                    List.filterMap List.head model.steps
+            in
+                List.map (\pos -> circle pos) positions
+
+        circle : Pos -> Svg Msg
+        circle ( x, y ) =
+            Svg.circle [ cx (toString x), cy (toString y), r "10", fill "red" ] []
+
+        drawStone : Pos -> Int -> Int -> Svg Msg
         drawStone ( x, y ) hole stone =
             let
                 gen =
@@ -364,25 +412,20 @@ viewBoard model =
                 ( ( dx, dy ), _ ) =
                     Random.step gen seed
             in
-                Svg.circle
-                    [ cx (x + 100 * hole + dx |> toString)
-                    , cy (y + dy |> toString)
-                    , r "10"
-                    , fill "red"
-                    ]
-                    []
+                circle ( x + 100 * hole + dx, y + dy )
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
                 ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent model.move - 1]
                 ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer model.move - 1]
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 55 ) i) [0..cnt - 1]) holes2)
-                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs i cnt)) []) holes2)
+                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs cnt)) []) holes2)
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 155 ) i) [0..cnt - 1]) holes1)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (playerAttrs i cnt)) []) holes1)
                 ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
                    , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
                    ]
+                ++ animatedStone model
             )
 
 
@@ -403,6 +446,7 @@ viewButtons model =
             in
                 Just view
 
+        nextButton : Maybe (Html Msg)
         nextButton =
             if model.move.winner /= Nothing then
                 drawButton Init "Restart" True
@@ -411,6 +455,7 @@ viewButtons model =
             else
                 Nothing
 
+        undoButton : Maybe (Html Msg)
         undoButton =
             if model.previousMove == Nothing then
                 Nothing
