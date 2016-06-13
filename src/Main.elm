@@ -354,13 +354,23 @@ viewBoard model =
                 []
 
         drawStone ( x, y ) hole stone =
-            Svg.circle
-                [ cx (x + 100 * hole + stone * 10 |> toString)
-                , cy (y + stone * 5 |> toString)
-                , r "10"
-                , fill "red"
-                ]
-                []
+            let
+                gen =
+                    Random.pair (Random.int -25 25) (Random.int -25 25)
+
+                seed =
+                    Random.initialSeed (x + y + hole + stone)
+
+                ( ( dx, dy ), _ ) =
+                    Random.step gen seed
+            in
+                Svg.circle
+                    [ cx (x + 100 * hole + dx |> toString)
+                    , cy (y + dy |> toString)
+                    , r "10"
+                    , fill "red"
+                    ]
+                    []
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10" ] [] ]
