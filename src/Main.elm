@@ -352,18 +352,27 @@ viewBoard model =
                 [ class "stones" ]
             else
                 []
+
+        drawStone ( x, y ) hole stone =
+            Svg.circle
+                [ cx (x + 100 * hole + stone * 10 |> toString)
+                , cy (y + stone * 5 |> toString)
+                , r "10"
+                , fill "red"
+                ]
+                []
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
-            ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10" ] []
-             , Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40" ] []
-             , Svg.text' [ x "50", y "105", textAnchor "middle" ] [ kalahaOpponent model.move |> toString |> text ]
-             , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40" ] []
-             , Svg.text' [ x "750", y "105", textAnchor "middle" ] [ kalahaPlayer model.move |> toString |> text ]
-             ]
-                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40" ] ++ (opponentAttrs i cnt)) []) holes2)
-                ++ (List.indexedMap (\i cnt -> Svg.text' [ x (100 * i + 150 |> toString), y "55", textAnchor "middle" ] [ cnt |> toString |> text ]) holes2)
-                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40" ] ++ (playerAttrs i cnt)) []) holes1)
-                ++ (List.indexedMap (\i cnt -> Svg.text' [ x (100 * i + 150 |> toString), y "155", textAnchor "middle" ] [ cnt |> toString |> text ]) holes1)
+            ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10" ] [] ]
+                ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent model.move - 1]
+                ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer model.move - 1]
+                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 55 ) i) [0..cnt - 1]) holes2)
+                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs i cnt)) []) holes2)
+                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 155 ) i) [0..cnt - 1]) holes1)
+                ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (playerAttrs i cnt)) []) holes1)
+                ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
+                   , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
+                   ]
             )
 
 
