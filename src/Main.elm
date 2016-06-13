@@ -111,7 +111,7 @@ animateSteps : Pos -> Pos -> List Pos
 animateSteps ( x, y ) ( x', y' ) =
     let
         n =
-            50
+            60
 
         steps =
             List.map (\i -> Ease.outQuad (i / n)) [0..n]
