@@ -163,10 +163,16 @@ animate from to =
                 (List.indexedMap (,) a)
 
         fromHole =
-            repeatDiff from.board to.board |> List.foldl (++) [] |> List.map (\i -> holeToPos i 0)
+            repeatDiff from.board to.board
+                |> List.map (List.indexedMap (,))
+                |> List.foldl (++) []
+                |> List.map (\( i, n ) -> holeToPos n ((get n to.board) + i))
 
         toHole =
-            repeatDiff to.board from.board |> List.foldl (++) [] |> List.map (\i -> holeToPos i 0)
+            repeatDiff to.board from.board
+                |> List.map (List.indexedMap (,))
+                |> List.foldl (++) []
+                |> List.map (\( i, n ) -> holeToPos n ((get n from.board) + i))
 
         zipped =
             List.map2 (,) fromHole toHole
@@ -380,6 +386,31 @@ nextMove hole move =
         checkWinner move'' |> nextPlayer last
 
 
+holeToPos : Int -> Int -> Pos
+holeToPos hole stone =
+    let
+        gen =
+            Random.pair (Random.int -25 25) (Random.int -25 25)
+
+        seed =
+            Random.initialSeed (x + y + hole + stone)
+
+        ( ( dx, dy ), _ ) =
+            Random.step gen seed
+
+        ( x, y ) =
+            if hole < 6 then
+                ( hole * 100 + 150, 155 )
+            else if hole == 6 then
+                ( 750, 105 )
+            else if hole < 13 then
+                ( (12 - hole) * 100 + 150, 55 )
+            else
+                ( 50, 105 )
+    in
+        ( x + dx, y + dy )
+
+
 
 -- SUBSCRIPTIONS
 
@@ -476,31 +507,6 @@ viewBoard model =
                    ]
                 ++ animatedStone model
             )
-
-
-holeToPos : Int -> Int -> Pos
-holeToPos hole stone =
-    let
-        gen =
-            Random.pair (Random.int -25 25) (Random.int -25 25)
-
-        seed =
-            Random.initialSeed (x + y + hole + stone)
-
-        ( ( dx, dy ), _ ) =
-            Random.step gen seed
-
-        ( x, y ) =
-            if hole < 6 then
-                ( hole * 100 + 150, 155 )
-            else if hole == 6 then
-                ( 750, 105 )
-            else if hole < 13 then
-                ( (12 - hole) * 100 + 150, 55 )
-            else
-                ( 50, 105 )
-    in
-        ( x + dx, y + dy )
 
 
 viewButtons : Model -> Html Msg
