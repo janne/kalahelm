@@ -9120,113 +9120,11 @@
 	var _elm_lang$svg$Svg_Attributes$accelerate = _elm_lang$virtual_dom$VirtualDom$attribute('accelerate');
 	var _elm_lang$svg$Svg_Attributes$accentHeight = _elm_lang$virtual_dom$VirtualDom$attribute('accent-height');
 
-	var _janne$kalahelm$Main$viewInstructions = A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$h3,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Instructions')
-					])),
-				A2(
-				_elm_lang$html$Html$ol,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('The objective of the game is to collect as many playing pieces as possible before one of the players clears their side of all the playing pieces. The row of six cups in front and closest to each player are theirs.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Start by placing four stones in each small cup. You have 48 stones total, and 12 cups, which means there should be four stones in each cup. Each player starts off with a total of 24 stones or beads.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Your mancala is the big basin to your right. Also called a \'store,\' it is where captured pieces are placed.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Choose which player is going to go first. Because there\'s no real an advantage to going first, flip a coin or choose a person at random.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Going counter-clockwise, the beginning player takes all four stones in one cup on her side and places one stone each in any four adjacent cups. Players can only grab stones that are on their side.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Players can put stones in their own Mancala, but not in their opponent\'s Mancala. If you have enough stones to reach your opponent\'s Mancala, skip it.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Take turns picking up stones in any cup and placing them.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('If your last stone falls into your Mancala, take another turn.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('If the last stone you drop is in an empty cup on your side, capture that piece along with any pieces in the hole directly opposite. Captured pieces go into your Mancala store.')
-							])),
-						A2(
-						_elm_lang$html$Html$li,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('When one player\'s six cups are completely empty, the game ends. The player who still has stones left in his cups captures those stones and puts them in his Mancala. Players compare the number of stones in their Mancala. The player with the most stones wins.')
-							]))
-					]))
-			]));
 	var _janne$kalahelm$Main$viewTitle = function (model) {
 		var title = function (winner) {
 			var _p0 = winner;
 			if (_p0.ctor === 'Nothing') {
-				return 'Kalaha';
+				return 'Kalahelm';
 			} else {
 				switch (_p0._0.ctor) {
 					case 'Player':
