@@ -54,7 +54,12 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { move = initMove, previousMove = Nothing, steps = [ [] ] }, Cmd.none )
+    ( initModel, Cmd.none )
+
+
+initModel : Model
+initModel =
+    { move = initMove, previousMove = Nothing, steps = [ [] ] }
 
 
 initMove : Move
@@ -88,7 +93,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Init ->
-            init
+            ( { initModel | steps = animate model.move initMove }, Cmd.none )
 
         NextMove hole ->
             let
