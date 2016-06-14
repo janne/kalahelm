@@ -151,28 +151,29 @@ animateSteps ( x, y ) ( x', y' ) =
 animate : Move -> Move -> List (List Pos)
 animate from to =
     let
-        repeatDiff a b =
-            List.map2
-                (\a' b' ->
-                    if (snd a') < (snd b') then
-                        List.repeat ((snd b') - (snd a')) (fst a')
-                    else
-                        []
-                )
-                (List.indexedMap (,) b)
-                (List.indexedMap (,) a)
+        positions a b =
+            let
+                diffs =
+                    List.map2
+                        (\a' b' ->
+                            if (snd a') < (snd b') then
+                                List.repeat ((snd b') - (snd a')) (fst a')
+                            else
+                                []
+                        )
+                        (List.indexedMap (,) b)
+                        (List.indexedMap (,) a)
+            in
+                diffs
+                    |> List.map (List.indexedMap (,))
+                    |> List.foldl (++) []
+                    |> List.map (\( i, n ) -> holeToPos n ((get n b) + i))
 
         fromHole =
-            repeatDiff from.board to.board
-                |> List.map (List.indexedMap (,))
-                |> List.foldl (++) []
-                |> List.map (\( i, n ) -> holeToPos n ((get n to.board) + i))
+            positions from.board to.board
 
         toHole =
-            repeatDiff to.board from.board
-                |> List.map (List.indexedMap (,))
-                |> List.foldl (++) []
-                |> List.map (\( i, n ) -> holeToPos n ((get n from.board) + i))
+            positions to.board from.board
 
         zipped =
             List.map2 (,) fromHole toHole
