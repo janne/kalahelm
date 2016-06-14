@@ -156,19 +156,16 @@ animate from to =
                 (List.indexedMap (,) b)
                 (List.indexedMap (,) a)
 
-        toPos holes =
-            List.map (\hole -> (if hole < 7 then hole * 110 + 105 else (13 - hole) * 110 + 105, if hole < 7 then 155 else 55 )) holes
-
         fromHole =
-            repeatDiff from.board to.board |> List.foldl (++) [] |> toPos
+            repeatDiff from.board to.board |> List.foldl (++) [] |> List.map holeToPos
 
         toHole =
-            repeatDiff to.board from.board |> List.foldl (++) [] |> toPos
+            repeatDiff to.board from.board |> List.foldl (++) [] |> List.map holeToPos
 
         zipped =
             List.map2 (,) fromHole toHole
     in
-        List.map (\(a, b) -> animateSteps a b) zipped
+        List.map (\( a, b ) -> animateSteps a b) zipped
 
 
 step : Model -> Model
@@ -468,6 +465,18 @@ viewBoard model =
                    ]
                 ++ animatedStone model
             )
+
+
+holeToPos : Int -> Pos
+holeToPos hole =
+    if hole < 6 then
+        ( hole * 100 + 150, 155 )
+    else if hole == 6 then
+        ( 750, 105 )
+    else if hole < 13 then
+        ( (12 - hole) * 100 + 150, 55 )
+    else
+        ( 50, 105 )
 
 
 viewButtons : Model -> Html Msg
