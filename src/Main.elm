@@ -87,19 +87,19 @@ intersection a b =
 
 
 type Msg
-    = Init
-    | NextMove Int
+    = NextMove Int
     | MoveOpponent
     | MoveOpponentRandom Int
-    | Undo
     | Tick
+    | Undo
+    | Restart
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Init ->
-            ( { initModel | steps = animate model.move initMove, aniMove = Just { initMove | board = [] } }, Cmd.none )
+        Restart ->
+            ( { initModel | steps = animate model.move initMove, aniMove = intersection model.move initMove }, Cmd.none )
 
         NextMove hole ->
             let
@@ -529,7 +529,7 @@ viewButtons model =
         nextButton : Bool -> Maybe (Html Msg)
         nextButton disabled =
             if model.move.winner /= Nothing then
-                drawButton Init "Restart" True disabled
+                drawButton Restart "Restart" True disabled
             else if model.move.player == 1 then
                 drawButton MoveOpponent "Next" True disabled
             else
