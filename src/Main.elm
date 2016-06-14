@@ -99,14 +99,27 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Restart ->
-            ( { initModel | steps = animate model.move initMove, aniMove = intersection model.move initMove }, Cmd.none )
+            ( { move = initMove
+              , previousMove = Just model.move
+              , steps = animate model.move initMove
+              , aniMove = intersection model.move initMove
+              }
+            , Cmd.none
+            )
 
         NextMove hole ->
             let
                 next =
                     nextMove hole model.move
             in
-                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next, aniMove = intersection model.move next }, Cmd.none )
+                ( { model
+                    | previousMove = Just model.move
+                    , move = next
+                    , steps = animate model.move next
+                    , aniMove = intersection model.move next
+                  }
+                , Cmd.none
+                )
 
         MoveOpponent ->
             ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
@@ -116,7 +129,14 @@ update msg model =
                 next =
                     moveOpponent rnd model.move
             in
-                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next, aniMove = intersection model.move next }, Cmd.none )
+                ( { model
+                    | previousMove = Just model.move
+                    , move = next
+                    , steps = animate model.move next
+                    , aniMove = intersection model.move next
+                  }
+                , Cmd.none
+                )
 
         Undo ->
             case model.previousMove of
@@ -124,7 +144,14 @@ update msg model =
                     ( model, Cmd.none )
 
                 Just previousMove ->
-                    ( { model | move = previousMove, previousMove = Nothing, steps = animate model.move previousMove, aniMove = intersection model.move previousMove }, Cmd.none )
+                    ( { model
+                        | move = previousMove
+                        , previousMove = Nothing
+                        , steps = animate model.move previousMove
+                        , aniMove = intersection model.move previousMove
+                      }
+                    , Cmd.none
+                    )
 
         Tick ->
             ( step model, Cmd.none )
