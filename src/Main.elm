@@ -139,7 +139,31 @@ animateSteps ( x, y ) ( x', y' ) =
 
 animate : Move -> Move -> List (List Pos)
 animate from to =
-    [ animateSteps ( 750, 50 ) ( 50, 150 ), animateSteps ( 50, 50 ) ( 750, 150 ) ]
+    let
+        repeatDiff a b =
+            List.map2
+                (\a' b' ->
+                    if (snd a') < (snd b') then
+                        List.repeat ((snd b') - (snd a')) (fst a')
+                    else
+                        []
+                )
+                (List.indexedMap (,) b)
+                (List.indexedMap (,) a)
+
+        toPos holes =
+            List.map (\hole -> (if hole < 7 then hole * 110 + 105 else (13 - hole) * 110 + 105, if hole < 7 then 155 else 55 )) holes
+
+        fromHole =
+            repeatDiff from.board to.board |> List.foldl (++) [] |> toPos
+
+        toHole =
+            repeatDiff to.board from.board |> List.foldl (++) [] |> toPos
+
+        zipped =
+            List.map2 (,) fromHole toHole
+    in
+        List.map (\(a, b) -> animateSteps a b) zipped
 
 
 step : Model -> Model
