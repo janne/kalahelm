@@ -49,6 +49,7 @@ type alias Model =
     { move : Move
     , previousMove : Maybe Move
     , steps : List (List Pos)
+    , aniMove : Maybe Move
     }
 
 
@@ -59,7 +60,7 @@ init =
 
 initModel : Model
 initModel =
-    { move = initMove, previousMove = Nothing, steps = [ [] ] }
+    { move = initMove, previousMove = Nothing, steps = [ [] ], aniMove = Nothing }
 
 
 initMove : Move
@@ -74,6 +75,11 @@ initBoard =
 
 animating model =
     List.isEmpty model.steps |> not
+
+
+intersection : Move -> Move -> Maybe Move
+intersection a b =
+    Just { a | board = List.map2 (\a' b' -> Basics.min a' b') a.board b.board }
 
 
 
@@ -93,14 +99,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Init ->
-            ( { initModel | steps = animate model.move initMove }, Cmd.none )
+            ( { initModel | steps = animate model.move initMove, aniMove = Just { initMove | board = [] } }, Cmd.none )
 
         NextMove hole ->
             let
                 next =
                     nextMove hole model.move
             in
-                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next }, Cmd.none )
+                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next, aniMove = intersection model.move next }, Cmd.none )
 
         MoveOpponent ->
             ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
@@ -110,7 +116,7 @@ update msg model =
                 next =
                     moveOpponent rnd model.move
             in
-                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next }, Cmd.none )
+                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next, aniMove = intersection model.move next }, Cmd.none )
 
         Undo ->
             case model.previousMove of
@@ -118,7 +124,7 @@ update msg model =
                     ( model, Cmd.none )
 
                 Just previousMove ->
-                    ( { model | move = previousMove, previousMove = Nothing, steps = animate model.move previousMove }, Cmd.none )
+                    ( { model | move = previousMove, previousMove = Nothing, steps = animate model.move previousMove, aniMove = intersection model.move previousMove }, Cmd.none )
 
         Tick ->
             ( step model, Cmd.none )
@@ -174,7 +180,14 @@ step model =
         tails =
             List.filterMap List.tail model.steps
     in
-        { model | steps = tails }
+        { model
+            | steps = tails
+            , aniMove =
+                if tails == [] then
+                    Nothing
+                else
+                    model.aniMove
+        }
 
 
 get : Int -> Board -> Int
@@ -403,18 +416,26 @@ viewTitle model =
 viewBoard : Model -> Html Msg
 viewBoard model =
     let
+        move =
+            case model.aniMove of
+                Nothing ->
+                    model.move
+
+                Just m ->
+                    m
+
         holes1 =
-            List.take 6 model.move.board
+            List.take 6 move.board
 
         holes2 =
-            model.move.board
+            move.board
                 |> List.drop 7
                 |> List.reverse
                 |> List.drop 1
 
         playerAttrs : Int -> Int -> List (Html.Attribute Msg)
         playerAttrs i stones =
-            if stones > 0 && model.move.player == 0 then
+            if stones > 0 && move.player == 0 then
                 [ class "stones playable", onClick (NextMove i) ]
             else
                 []
@@ -454,8 +475,8 @@ viewBoard model =
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
-                ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent model.move - 1]
-                ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer model.move - 1]
+                ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent move - 1]
+                ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer move - 1]
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 55 ) i) [0..cnt - 1]) holes2)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs cnt)) []) holes2)
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 155 ) i) [0..cnt - 1]) holes1)
