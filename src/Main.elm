@@ -430,7 +430,7 @@ viewTitle model =
         title winner =
             case winner of
                 Nothing ->
-                    "Kalaha"
+                    "Kalahelm"
 
                 Just Player ->
                     "Game over, winner was: Human"
