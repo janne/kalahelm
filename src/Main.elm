@@ -48,7 +48,7 @@ type Winner
 type alias Model =
     { move : Move
     , previousMove : Maybe Move
-    , steps : List (List ( Int, Int ))
+    , steps : List (List Pos)
     }
 
 
@@ -91,13 +91,21 @@ update msg model =
             init
 
         NextMove hole ->
-            ( animate (nextMove hole model.move) model, Cmd.none )
+            let
+                next =
+                    nextMove hole model.move
+            in
+                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next }, Cmd.none )
 
         MoveOpponent ->
             ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
 
         MoveOpponentRandom rnd ->
-            ( animate (moveOpponent rnd model.move) model, Cmd.none )
+            let
+                next =
+                    moveOpponent rnd model.move
+            in
+                ( { model | previousMove = Just model.move, move = next, steps = animate model.move next }, Cmd.none )
 
         Undo ->
             case model.previousMove of
@@ -105,7 +113,7 @@ update msg model =
                     ( model, Cmd.none )
 
                 Just previousMove ->
-                    ( { model | move = previousMove, previousMove = Nothing }, Cmd.none )
+                    ( { model | move = previousMove, previousMove = Nothing, steps = animate model.move previousMove }, Cmd.none )
 
         Tick ->
             ( step model, Cmd.none )
@@ -129,9 +137,9 @@ animateSteps ( x, y ) ( x', y' ) =
         List.map (\f -> ( round (dx * f) + x, round (dy * f) + y )) steps
 
 
-animate : Move -> Model -> Model
-animate move model =
-    { model | previousMove = Just model.move, move = move, steps = [ animateSteps ( 750, 50 ) ( 50, 150 ), animateSteps ( 50, 50 ) ( 750, 150 ) ] }
+animate : Move -> Move -> List (List Pos)
+animate from to =
+    [ animateSteps ( 750, 50 ) ( 50, 150 ), animateSteps ( 50, 50 ) ( 750, 150 ) ]
 
 
 step : Model -> Model
