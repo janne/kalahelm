@@ -70,7 +70,7 @@ initMove =
 
 initBoard : Board
 initBoard =
-    [ 3, 3, 3, 3, 3, 3, 0, 3, 3, 3, 3, 3, 3, 0 ]
+    [ 4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0 ]
 
 
 animating model =
@@ -226,7 +226,7 @@ otherKalaha move =
 
 stonesMissing : Move -> Int
 stonesMissing move =
-    36 - List.sum move.board
+    48 - List.sum move.board
 
 
 incrementFrom : Int -> Move -> ( Move, Int )
@@ -345,14 +345,14 @@ checkWinner move =
                     List.repeat 6 0
                         ++ [ kalahaPlayer move ]
                         ++ List.repeat 6 0
-                        ++ [ 36 - kalahaPlayer move ]
+                        ++ [ 48 - kalahaPlayer move ]
             }
     else if List.sum (List.drop 7 move.board |> List.take 6) == 0 then
         winner
             { move
                 | board =
                     List.repeat 6 0
-                        ++ [ 36 - kalahaOpponent move ]
+                        ++ [ 48 - kalahaOpponent move ]
                         ++ List.repeat 6 0
                         ++ [ kalahaOpponent move ]
             }
