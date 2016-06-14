@@ -399,6 +399,12 @@ holeToPos hole stone =
         ( ( dx, dy ), _ ) =
             Random.step gen seed
 
+        multiplier =
+            if hole == 6 || hole == 13 then
+                3
+            else
+                1
+
         ( x, y ) =
             if hole < 6 then
                 ( hole * 100 + 150, 155 )
@@ -409,7 +415,7 @@ holeToPos hole stone =
             else
                 ( 50, 105 )
     in
-        ( x + dx, y + dy )
+        ( x + dx, y + dy * multiplier )
 
 
 
