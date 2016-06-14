@@ -459,9 +459,12 @@ viewBoard model =
         circle ( x, y ) =
             Svg.circle [ cx (toString x), cy (toString y), r "10", fill "red" ] []
 
-        drawStone : Pos -> Int -> Int -> Svg Msg
-        drawStone ( x, y ) hole stone =
+        drawStone : Int -> Int -> Svg Msg
+        drawStone hole stone =
             let
+                ( x, y ) =
+                    holeToPos hole
+
                 gen =
                     Random.pair (Random.int -25 25) (Random.int -25 25)
 
@@ -471,15 +474,15 @@ viewBoard model =
                 ( ( dx, dy ), _ ) =
                     Random.step gen seed
             in
-                circle ( x + 100 * hole + dx, y + dy )
+                circle ( x + dx, y + dy )
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
-                ++ List.map (drawStone ( 50, 105 ) 0) [0..kalahaOpponent move - 1]
-                ++ List.map (drawStone ( 750, 105 ) 0) [0..kalahaPlayer move - 1]
-                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 55 ) i) [0..cnt - 1]) holes2)
+                ++ List.map (drawStone 13) [0..kalahaOpponent move - 1]
+                ++ List.map (drawStone 6) [0..kalahaPlayer move - 1]
+                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone (12 - i)) [0..cnt - 1]) holes2)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs cnt)) []) holes2)
-                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone ( 150, 155 ) i) [0..cnt - 1]) holes1)
+                ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone i) [0..cnt - 1]) holes1)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (playerAttrs i cnt)) []) holes1)
                 ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
                    , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
