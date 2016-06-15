@@ -47,7 +47,7 @@ type Winner
 
 type alias Model =
     { move : Move
-    , previousMove : Maybe Move
+    , history : List Move
     , steps : List (List Pos)
     , aniMove : Maybe Move
     }
@@ -60,7 +60,7 @@ init =
 
 initModel : Model
 initModel =
-    { move = initMove, previousMove = Nothing, steps = [ [] ], aniMove = Nothing }
+    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing }
 
 
 initMove : Move
@@ -100,7 +100,7 @@ update msg model =
     case msg of
         Restart ->
             ( { move = initMove
-              , previousMove = Just model.move
+              , history = model.move :: model.history
               , steps = animate model.move initMove
               , aniMove = intersection model.move initMove
               }
@@ -113,7 +113,7 @@ update msg model =
                     nextMove hole model.move
             in
                 ( { model
-                    | previousMove = Just model.move
+                    | history = model.move :: model.history
                     , move = next
                     , steps = animate model.move next
                     , aniMove = intersection model.move next
@@ -130,7 +130,7 @@ update msg model =
                     moveOpponent rnd model.move
             in
                 ( { model
-                    | previousMove = Just model.move
+                    | history = model.move :: model.history
                     , move = next
                     , steps = animate model.move next
                     , aniMove = intersection model.move next
@@ -139,16 +139,16 @@ update msg model =
                 )
 
         Undo ->
-            case model.previousMove of
-                Nothing ->
+            case model.history of
+                [] ->
                     ( model, Cmd.none )
 
-                Just previousMove ->
+                head :: tail ->
                     ( { model
-                        | move = previousMove
-                        , previousMove = Nothing
-                        , steps = animate model.move previousMove
-                        , aniMove = intersection model.move previousMove
+                        | move = head
+                        , history = tail
+                        , steps = animate model.move head
+                        , aniMove = intersection model.move head
                       }
                     , Cmd.none
                     )
@@ -571,13 +571,17 @@ viewButtons model =
 
         undoButton : Bool -> Maybe (Html Msg)
         undoButton disabled =
-            if model.previousMove == Nothing then
+            if List.isEmpty model.history then
                 Nothing
             else
                 drawButton Undo "Undo" False disabled
     in
         div [ Attr.class "btn-group" ]
-            (List.filterMap identity [ nextButton (animating model), undoButton (animating model) ])
+            (List.filterMap identity
+                [ undoButton (animating model)
+                , nextButton (animating model)
+                ]
+            )
 
 
 view : Model -> Html Msg
