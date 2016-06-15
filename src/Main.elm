@@ -323,19 +323,48 @@ nextPlayer hole move =
 moveOpponent : Int -> Move -> Move
 moveOpponent rnd move =
     let
-        indexedHoles =
-            List.indexedMap (,) move.board
-                |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
+        bestMoves : Move -> List Move
+        bestMoves move =
+            let
+                candidates =
+                    List.indexedMap (,) move.board
+                        |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
+                        |> List.map (\( i, n ) -> nextMove i move)
+                        |> List.map
+                            (\m ->
+                                if m.player == 0 then
+                                    ( m, kalahaOpponent m )
+                                else
+                                    case bestMoves m of
+                                        [] ->
+                                            ( m, 0 )
 
-        drop =
-            rnd % List.length indexedHoles
+                                        m' :: _ ->
+                                            ( m, kalahaOpponent m' )
+                            )
+                        |> List.sortBy snd
+                        |> List.reverse
+
+                kalaha =
+                    candidates
+                        |> List.head
+                        |> Maybe.withDefault ( move, 0 )
+                        |> snd
+            in
+                candidates
+                    |> List.filter (\( _, i ) -> kalaha == i)
+                    |> List.map fst
+
+        moves =
+            bestMoves move
+
+        pos =
+            rnd % (List.length moves)
     in
-        case List.drop drop indexedHoles |> List.head of
-            Nothing ->
-                move
-
-            Just ( i, _ ) ->
-                nextMove i move
+        moves
+            |> List.drop pos
+            |> List.head
+            |> Maybe.withDefault move
 
 
 ownHole : Int -> Move -> Bool
