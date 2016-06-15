@@ -546,26 +546,12 @@ viewBoard model =
 viewButtons : Model -> Html Msg
 viewButtons model =
     let
-        drawButton : Msg -> String -> Bool -> Bool -> Maybe (Html Msg)
-        drawButton msg title primary disabled =
-            let
-                cl =
-                    if primary then
-                        "btn btn-primary"
-                    else
-                        "btn btn-default"
-
-                view =
-                    button [ Attr.class cl, Attr.disabled disabled, onClick msg ] [ text title ]
-            in
-                Just view
-
         nextButton : Bool -> Maybe (Html Msg)
         nextButton disabled =
             if model.move.winner /= Nothing then
-                drawButton Restart "Restart" True disabled
+                Just <| button [ class "btn btn-primary", Attr.disabled disabled, onClick Restart ] [ text "Restart" ]
             else if model.move.player == 1 then
-                drawButton MoveOpponent "Next" True disabled
+                Just <| button [ class "btn btn-primary", Attr.disabled disabled, onClick MoveOpponent ] [ text "Next" ]
             else
                 Nothing
 
@@ -574,12 +560,12 @@ viewButtons model =
             if List.isEmpty model.history then
                 Nothing
             else
-                drawButton Undo "Undo" False disabled
+                Just <| button [ class "btn btn-default pull-right", Attr.disabled disabled, onClick Undo ] [ text "Undo" ]
     in
-        div [ Attr.class "btn-group" ]
+        div []
             (List.filterMap identity
-                [ undoButton (animating model)
-                , nextButton (animating model)
+                [ nextButton (animating model)
+                , undoButton (animating model)
                 ]
             )
 
