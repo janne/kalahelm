@@ -50,6 +50,7 @@ type alias Model =
     , history : List Move
     , steps : List (List Pos)
     , aniMove : Maybe Move
+    , autoMove : Bool
     }
 
 
@@ -60,7 +61,7 @@ init =
 
 initModel : Model
 initModel =
-    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing }
+    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing, autoMove = False }
 
 
 initMove : Move
@@ -103,6 +104,7 @@ update msg model =
               , history = model.move :: model.history
               , steps = animate model.move initMove
               , aniMove = intersection model.move initMove
+              , autoMove = False
               }
             , Cmd.none
             )
@@ -134,6 +136,7 @@ update msg model =
                     , move = next
                     , steps = animate model.move next
                     , aniMove = intersection model.move next
+                    , autoMove = (next.player == 1)
                   }
                 , Cmd.none
                 )
@@ -154,7 +157,10 @@ update msg model =
                     )
 
         Tick ->
-            ( step model, Cmd.none )
+            if model.autoMove && model.aniMove == Nothing then
+                update MoveOpponent model
+            else
+                ( step model, Cmd.none )
 
 
 animateSteps : Pos -> Pos -> List Pos
