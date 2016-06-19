@@ -179,11 +179,13 @@ update msg model =
                             update (NextMove <| keyCode - 49) model
                         else
                             ( model, Cmd.none )
-                else if model.move.player == 1 && (keyCode == 13 || keyCode == 32) then
-                    if model.move.winner == Nothing then
+                else if (keyCode == 13 || keyCode == 32) then
+                    if model.move.winner /= Nothing then
+                        update Restart model
+                    else if model.move.player == 1 then
                         update MoveOpponent model
                     else
-                        update Restart model
+                        ( model, Cmd.none )
                 else if (Char.fromCode keyCode == 'u') && not (List.isEmpty model.history) then
                     update Undo model
                 else
