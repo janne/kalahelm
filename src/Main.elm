@@ -9,6 +9,8 @@ import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
 import AnimationFrame
 import Ease
+import Keyboard
+import Char
 
 
 main =
@@ -91,6 +93,7 @@ type Msg
     = NextMove Int
     | MoveOpponent
     | MoveOpponentRandom Int
+    | Press Keyboard.KeyCode
     | Tick
     | Undo
     | Restart
@@ -161,6 +164,32 @@ update msg model =
                 update MoveOpponent model
             else
                 ( step model, Cmd.none )
+
+        Press keyCode ->
+            if model.aniMove == Nothing then
+                if model.move.player == 0 && keyCode >= 49 && keyCode < 55 then
+                    let
+                        hole =
+                            keyCode - 49
+
+                        stones =
+                            get hole model.move.board
+                    in
+                        if stones > 0 then
+                            update (NextMove <| keyCode - 49) model
+                        else
+                            ( model, Cmd.none )
+                else if model.move.player == 1 && (keyCode == 13 || keyCode == 32) then
+                    if model.move.winner == Nothing then
+                        update MoveOpponent model
+                    else
+                        update Restart model
+                else if (Char.fromCode keyCode == 'u') && not (List.isEmpty model.history) then
+                    update Undo model
+                else
+                    ( model, Cmd.none )
+            else
+                ( model, Cmd.none )
 
 
 animateSteps : Pos -> Pos -> List Pos
@@ -486,7 +515,7 @@ holeToPos hole stone =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.diffs (always Tick)
+    Sub.batch [ AnimationFrame.diffs (always Tick), Keyboard.presses Press ]
 
 
 
