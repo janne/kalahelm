@@ -603,7 +603,9 @@ viewBoard model =
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone i) [0..cnt - 1]) holes1)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (playerAttrs i cnt)) []) holes1)
                 ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
+                   , Svg.text' [ x "50", y "20", fill "black", fontSize "10", textAnchor "middle" ] [ text (kalahaOpponent move |> toString) ]
                    , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
+                   , Svg.text' [ x "750", y "195", fill "black", fontSize "10", textAnchor "middle" ] [ text (kalahaPlayer move |> toString) ]
                    ]
                 ++ animatedStone model
             )
