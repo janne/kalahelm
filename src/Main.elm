@@ -36,9 +36,14 @@ type alias Pos =
 
 type alias Move =
     { board : Board
-    , player : Int
+    , player : Player
     , winner : Maybe Winner
     }
+
+
+type Player
+    = Human
+    | Computer
 
 
 type Level
@@ -48,8 +53,7 @@ type Level
 
 
 type Winner
-    = Human
-    | Computer
+    = Player Player
     | Draw
 
 
@@ -75,7 +79,7 @@ initModel =
 
 initMove : Move
 initMove =
-    { board = initBoard, player = 0, winner = Nothing }
+    { board = initBoard, player = Human, winner = Nothing }
 
 
 initBoard : Board
@@ -147,7 +151,7 @@ update msg model =
                     , move = next
                     , steps = animate model.move next
                     , aniMove = intersection model.move next
-                    , autoMove = (next.player == 1 && next.winner == Nothing)
+                    , autoMove = (next.player == Computer && next.winner == Nothing)
                   }
                 , Cmd.none
                 )
@@ -175,7 +179,7 @@ update msg model =
 
         Press keyCode ->
             if model.aniMove == Nothing then
-                if model.move.player == 0 && keyCode >= 49 && keyCode < 55 then
+                if model.move.player == Human && keyCode >= 49 && keyCode < 55 then
                     let
                         hole =
                             keyCode - 49
@@ -190,7 +194,7 @@ update msg model =
                 else if (keyCode == 13 || keyCode == 32) then
                     if model.move.winner /= Nothing then
                         update Restart model
-                    else if model.move.player == 1 then
+                    else if model.move.player == Computer then
                         update MoveComputer model
                     else
                         ( model, Cmd.none )
@@ -286,7 +290,7 @@ set n stones board =
 
 kalaha : Move -> Int
 kalaha move =
-    if move.player == 0 then
+    if move.player == Human then
         6
     else
         13
@@ -294,7 +298,7 @@ kalaha move =
 
 otherKalaha : Move -> Int
 otherKalaha move =
-    if move.player == 0 then
+    if move.player == Human then
         13
     else
         6
@@ -363,7 +367,14 @@ steal hole move =
 nextPlayer : Int -> Move -> Move
 nextPlayer hole move =
     if hole /= kalaha move then
-        { move | player = (move.player + 1) % 2 }
+        { move
+            | player =
+                (if move.player == Human then
+                    Computer
+                 else
+                    Human
+                )
+        }
     else
         move
 
@@ -403,7 +414,7 @@ moveComputer rnd level move =
             moves
                 |> List.map
                     (\m ->
-                        if m.player == 0 then
+                        if m.player == Human then
                             ( m, kalahaComputer m )
                         else
                             case possibleMoves m |> bestRecursiveMoves |> bestMoves of
@@ -439,7 +450,7 @@ moveComputer rnd level move =
 
 ownHole : Int -> Move -> Bool
 ownHole hole move =
-    if move.player == 0 then
+    if move.player == Human then
         hole >= 0 && hole < 6
     else
         hole >= 7 && hole < 13
@@ -452,13 +463,13 @@ winner move =
             Just
                 (case compare (kalahaHuman move) (kalahaComputer move) of
                     LT ->
-                        Computer
+                        Player Computer
 
                     EQ ->
                         Draw
 
                     GT ->
-                        Human
+                        Player Human
                 )
     }
 
@@ -565,10 +576,10 @@ viewTitle model =
                 Nothing ->
                     "Kalahelm"
 
-                Just Human ->
+                Just (Player Human) ->
                     "Game over, winner was: Human"
 
-                Just Computer ->
+                Just (Player Computer) ->
                     "Game over, winner was: Computer"
 
                 Just Draw ->
@@ -599,7 +610,7 @@ viewBoard model =
 
         playerAttrs : Int -> Int -> List (Html.Attribute Msg)
         playerAttrs i stones =
-            if stones > 0 && move.player == 0 then
+            if stones > 0 && move.player == Human then
                 [ class "stones playable", onClick (NextMove i) ]
             else
                 []
@@ -650,7 +661,7 @@ viewButtons model =
         nextButton : Bool -> Html Msg
         nextButton disabled =
             if model.move.winner == Nothing then
-                button [ class "btn btn-primary pull-left", Attr.disabled (disabled || model.move.player == 0), onClick MoveComputer ] [ text "Next" ]
+                button [ class "btn btn-primary pull-left", Attr.disabled (disabled || model.move.player == Human), onClick MoveComputer ] [ text "Next" ]
             else
                 button [ class "btn btn-primary pull-left", Attr.disabled disabled, onClick Restart ] [ text "Restart" ]
 
