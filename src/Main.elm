@@ -147,7 +147,7 @@ update msg model =
                     , move = next
                     , steps = animate model.move next
                     , aniMove = intersection model.move next
-                    , autoMove = (next.player == 1)
+                    , autoMove = (next.player == 1 && next.winner == Nothing)
                   }
                 , Cmd.none
                 )
