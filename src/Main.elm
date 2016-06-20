@@ -115,6 +115,7 @@ update msg model =
                 | history = model.move :: model.history
                 , steps = animate model.move initMove
                 , aniMove = intersection model.move initMove
+                , level = model.level
               }
             , Cmd.none
             )
