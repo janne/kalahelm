@@ -580,10 +580,24 @@ subscriptions model =
 viewTitle : Model -> Html Msg
 viewTitle model =
     let
+        countWins player =
+            List.foldl
+                (\m curr ->
+                    if m.winner == Just (Player player) then
+                        curr + 1
+                    else
+                        curr
+                )
+                0
+                model.history
+
+        stats =
+            "Human: " ++ (countWins Human |> toString) ++ " vs. Computer: " ++ (countWins Computer |> toString)
+
         title winner =
             case winner of
                 Nothing ->
-                    "Kalahelm"
+                    stats
 
                 Just (Player Human) ->
                     "Game over, winner was: Human"
