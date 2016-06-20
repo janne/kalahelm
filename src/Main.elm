@@ -49,7 +49,7 @@ type Level
 
 type Winner
     = Human
-    | Opponent
+    | Computer
     | Draw
 
 
@@ -98,8 +98,8 @@ intersection a b =
 
 type Msg
     = NextMove Int
-    | MoveOpponent
-    | MoveOpponentRandom Int
+    | MoveComputer
+    | MoveComputerRandom Int
     | Press Keyboard.KeyCode
     | ChangeLevel Level
     | Tick
@@ -134,13 +134,13 @@ update msg model =
                 , Cmd.none
                 )
 
-        MoveOpponent ->
-            ( model, Random.generate MoveOpponentRandom (Random.int 0 100) )
+        MoveComputer ->
+            ( model, Random.generate MoveComputerRandom (Random.int 0 100) )
 
-        MoveOpponentRandom rnd ->
+        MoveComputerRandom rnd ->
             let
                 next =
-                    moveOpponent rnd model.level model.move
+                    moveComputer rnd model.level model.move
             in
                 ( { model
                     | history = model.move :: model.history
@@ -169,7 +169,7 @@ update msg model =
 
         Tick ->
             if model.autoMove && model.aniMove == Nothing then
-                update MoveOpponent model
+                update MoveComputer model
             else
                 ( step model, Cmd.none )
 
@@ -191,7 +191,7 @@ update msg model =
                     if model.move.winner /= Nothing then
                         update Restart model
                     else if model.move.player == 1 then
-                        update MoveOpponent model
+                        update MoveComputer model
                     else
                         ( model, Cmd.none )
                 else if (Char.fromCode keyCode == 'u') && not (List.isEmpty model.history) then
@@ -368,8 +368,8 @@ nextPlayer hole move =
         move
 
 
-moveOpponent : Int -> Level -> Move -> Move
-moveOpponent rnd level move =
+moveComputer : Int -> Level -> Move -> Move
+moveComputer rnd level move =
     let
         possibleMoves : Move -> List Move
         possibleMoves move =
@@ -395,7 +395,7 @@ moveOpponent rnd level move =
         bestMoves : List Move -> List Move
         bestMoves moves =
             moves
-                |> List.map (\m -> ( m, kalahaOpponent m ))
+                |> List.map (\m -> ( m, kalahaComputer m ))
                 |> onlyTheBest
 
         bestRecursiveMoves : List Move -> List Move
@@ -404,14 +404,14 @@ moveOpponent rnd level move =
                 |> List.map
                     (\m ->
                         if m.player == 0 then
-                            ( m, kalahaOpponent m )
+                            ( m, kalahaComputer m )
                         else
                             case possibleMoves m |> bestRecursiveMoves |> bestMoves of
                                 [] ->
                                     ( m, 0 )
 
                                 m' :: _ ->
-                                    ( m, kalahaOpponent m' )
+                                    ( m, kalahaComputer m' )
                     )
                 |> onlyTheBest
 
@@ -450,9 +450,9 @@ winner move =
     { move
         | winner =
             Just
-                (case compare (kalahaPlayer move) (kalahaOpponent move) of
+                (case compare (kalahaPlayer move) (kalahaComputer move) of
                     LT ->
-                        Opponent
+                        Computer
 
                     EQ ->
                         Draw
@@ -479,9 +479,9 @@ checkWinner move =
             { move
                 | board =
                     List.repeat 6 0
-                        ++ [ 48 - kalahaOpponent move ]
+                        ++ [ 48 - kalahaComputer move ]
                         ++ List.repeat 6 0
-                        ++ [ kalahaOpponent move ]
+                        ++ [ kalahaComputer move ]
             }
     else
         move
@@ -492,8 +492,8 @@ kalahaPlayer move =
     get 6 move.board
 
 
-kalahaOpponent : Move -> Int
-kalahaOpponent move =
+kalahaComputer : Move -> Int
+kalahaComputer move =
     get 13 move.board
 
 
@@ -568,7 +568,7 @@ viewTitle model =
                 Just Human ->
                     "Game over, winner was: Human"
 
-                Just Opponent ->
+                Just Computer ->
                     "Game over, winner was: Computer"
 
                 Just Draw ->
@@ -629,14 +629,14 @@ viewBoard model =
     in
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
-                ++ List.map (drawStone 13) [0..kalahaOpponent move - 1]
+                ++ List.map (drawStone 13) [0..kalahaComputer move - 1]
                 ++ List.map (drawStone 6) [0..kalahaPlayer move - 1]
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone (12 - i)) [0..cnt - 1]) holes2)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs cnt)) []) holes2)
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone i) [0..cnt - 1]) holes1)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "110", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (playerAttrs i cnt)) []) holes1)
                 ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
-                   , Svg.text' [ x "50", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaOpponent move |> toString) ]
+                   , Svg.text' [ x "50", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaComputer move |> toString) ]
                    , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
                    , Svg.text' [ x "750", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaPlayer move |> toString) ]
                    ]
@@ -650,7 +650,7 @@ viewButtons model =
         nextButton : Bool -> Html Msg
         nextButton disabled =
             if model.move.winner == Nothing then
-                button [ class "btn btn-primary pull-left", Attr.disabled (disabled || model.move.player == 0), onClick MoveOpponent ] [ text "Next" ]
+                button [ class "btn btn-primary pull-left", Attr.disabled (disabled || model.move.player == 0), onClick MoveComputer ] [ text "Next" ]
             else
                 button [ class "btn btn-primary pull-left", Attr.disabled disabled, onClick Restart ] [ text "Restart" ]
 
