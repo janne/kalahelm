@@ -140,7 +140,7 @@ update msg model =
         MoveOpponentRandom rnd ->
             let
                 next =
-                    moveOpponent rnd model.move
+                    moveOpponent rnd model.level model.move
             in
                 ( { model
                     | history = model.move :: model.history
@@ -368,43 +368,57 @@ nextPlayer hole move =
         move
 
 
-moveOpponent : Int -> Move -> Move
-moveOpponent rnd move =
+moveOpponent : Int -> Level -> Move -> Move
+moveOpponent rnd level move =
     let
-        bestMoves : Move -> List Move
-        bestMoves move =
-            let
-                candidates =
-                    List.indexedMap (,) move.board
-                        |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
-                        |> List.map (\( i, n ) -> nextMove i move)
-                        |> List.map
-                            (\m ->
-                                if m.player == 0 then
-                                    ( m, kalahaOpponent m )
-                                else
-                                    case bestMoves m of
-                                        [] ->
-                                            ( m, 0 )
+        possibleMoves : Move -> List Move
+        possibleMoves move =
+            List.indexedMap (,) move.board
+                |> List.filter (\( i, n ) -> n > 0 && i >= 7 && i < 13)
+                |> List.map (\( i, _ ) -> nextMove i move)
 
-                                        m' :: _ ->
-                                            ( m, kalahaOpponent m' )
-                            )
+        onlyTheBest : List ( Move, Int ) -> List Move
+        onlyTheBest moves =
+            let
+                best =
+                    moves
                         |> List.sortBy snd
                         |> List.reverse
-
-                kalaha =
-                    candidates
                         |> List.head
                         |> Maybe.withDefault ( move, 0 )
                         |> snd
             in
-                candidates
-                    |> List.filter (\( _, i ) -> kalaha == i)
+                moves
+                    |> List.filter (\( _, i ) -> best == i)
                     |> List.map fst
 
+        bestMoves : Move -> List Move
+        bestMoves move =
+            possibleMoves move
+                |> List.map
+                    (\m ->
+                        if m.player == 0 then
+                            ( m, kalahaOpponent m )
+                        else
+                            case bestMoves m of
+                                [] ->
+                                    ( m, 0 )
+
+                                m' :: _ ->
+                                    ( m, kalahaOpponent m' )
+                    )
+                |> onlyTheBest
+
         moves =
-            bestMoves move
+            case level of
+                Easy ->
+                    possibleMoves move
+
+                Medium ->
+                    bestMoves move
+
+                Hard ->
+                    bestMoves move
 
         pos =
             rnd % (List.length moves)
@@ -645,7 +659,7 @@ viewButtons model =
                     in
                         button [ class cl, Attr.disabled disabled, onClick (ChangeLevel lvl) ] [ lvl |> toString |> text ]
             in
-                div [ class "btn-group" ] (List.map lvlButton [Easy, Medium, Hard])
+                div [ class "btn-group" ] (List.map lvlButton [ Easy, Medium, Hard ])
 
         undoButton : Bool -> Html Msg
         undoButton disabled =
