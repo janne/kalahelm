@@ -450,7 +450,7 @@ winner move =
     { move
         | winner =
             Just
-                (case compare (kalahaPlayer move) (kalahaComputer move) of
+                (case compare (kalahaHuman move) (kalahaComputer move) of
                     LT ->
                         Computer
 
@@ -470,9 +470,9 @@ checkWinner move =
             { move
                 | board =
                     List.repeat 6 0
-                        ++ [ kalahaPlayer move ]
+                        ++ [ kalahaHuman move ]
                         ++ List.repeat 6 0
-                        ++ [ 48 - kalahaPlayer move ]
+                        ++ [ 48 - kalahaHuman move ]
             }
     else if List.sum (List.drop 7 move.board |> List.take 6) == 0 then
         winner
@@ -487,8 +487,8 @@ checkWinner move =
         move
 
 
-kalahaPlayer : Move -> Int
-kalahaPlayer move =
+kalahaHuman : Move -> Int
+kalahaHuman move =
     get 6 move.board
 
 
@@ -630,7 +630,7 @@ viewBoard model =
         Svg.svg [ width "100%", stroke "black", fill "white", rx "40", ry "40", viewBox "0 0 800 210" ]
             ([ Svg.rect [ width "100%", height "100%", rx "10", ry "10", fill "black" ] [] ]
                 ++ List.map (drawStone 13) [0..kalahaComputer move - 1]
-                ++ List.map (drawStone 6) [0..kalahaPlayer move - 1]
+                ++ List.map (drawStone 6) [0..kalahaHuman move - 1]
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone (12 - i)) [0..cnt - 1]) holes2)
                 ++ (List.indexedMap (\i cnt -> Svg.rect ([ x (100 * i + 105 |> toString), y "10", width "90", height "90", rx "40", ry "40", fillOpacity "0.5" ] ++ (opponentAttrs cnt)) []) holes2)
                 ++ (List.foldl (++) [] <| List.indexedMap (\i cnt -> List.map (drawStone i) [0..cnt - 1]) holes1)
@@ -638,7 +638,7 @@ viewBoard model =
                 ++ [ Svg.rect [ x "10", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
                    , Svg.text' [ x "50", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaComputer move |> toString) ]
                    , Svg.rect [ x "710", y "10", width "80", height "190", rx "40", ry "40", fillOpacity "0.5" ] []
-                   , Svg.text' [ x "750", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaPlayer move |> toString) ]
+                   , Svg.text' [ x "750", y "195", fill "black", fontSize "14", textAnchor "middle" ] [ text (kalahaHuman move |> toString) ]
                    ]
                 ++ animatedStone model
             )
