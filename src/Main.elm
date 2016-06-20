@@ -53,6 +53,7 @@ type alias Model =
     , steps : List (List Pos)
     , aniMove : Maybe Move
     , autoMove : Bool
+    , level : Int
     }
 
 
@@ -63,7 +64,7 @@ init =
 
 initModel : Model
 initModel =
-    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing, autoMove = False }
+    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing, autoMove = False, level = 1 }
 
 
 initMove : Move
@@ -94,6 +95,7 @@ type Msg
     | MoveOpponent
     | MoveOpponentRandom Int
     | Press Keyboard.KeyCode
+    | ChangeLevel Int
     | Tick
     | Undo
     | Restart
@@ -103,11 +105,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Restart ->
-            ( { move = initMove
-              , history = model.move :: model.history
-              , steps = animate model.move initMove
-              , aniMove = intersection model.move initMove
-              , autoMove = False
+            ( { initModel
+                | history = model.move :: model.history
+                , steps = animate model.move initMove
+                , aniMove = intersection model.move initMove
               }
             , Cmd.none
             )
@@ -192,6 +193,9 @@ update msg model =
                     ( model, Cmd.none )
             else
                 ( model, Cmd.none )
+
+        ChangeLevel lvl ->
+            ( { model | level = lvl }, Cmd.none )
 
 
 animateSteps : Pos -> Pos -> List Pos
@@ -623,11 +627,22 @@ viewButtons model =
 
         levelButtons : Bool -> Html Msg
         levelButtons disabled =
-            div [ class "btn-group" ]
-                [ button [ class "btn btn-default", Attr.disabled disabled ] [ text "Easy" ]
-                , button [ class "btn btn-default active", Attr.disabled disabled ] [ text "Normal" ]
-                , button [ class "btn btn-default", Attr.disabled disabled ] [ text "Hard" ]
-                ]
+            let
+                lvlButton lvl =
+                    let
+                        cl =
+                            if lvl == model.level then
+                                "btn btn-default active"
+                            else
+                                "btn btn-default"
+                        title = case lvl of
+                            0 -> "Easy"
+                            1 -> "Medium"
+                            _ -> "Hard"
+                    in
+                        button [ class cl, Attr.disabled disabled, onClick (ChangeLevel lvl) ] [ text title ]
+            in
+                div [ class "btn-group" ] (List.map lvlButton [0..2])
 
         undoButton : Bool -> Html Msg
         undoButton disabled =
