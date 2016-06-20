@@ -415,7 +415,9 @@ moveOpponent rnd level move =
                     possibleMoves move
 
                 Medium ->
-                    bestMoves move
+                    possibleMoves move
+                        |> List.map (\m -> (m, kalahaOpponent m))
+                        |> onlyTheBest
 
                 Hard ->
                     bestMoves move
