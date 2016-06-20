@@ -48,7 +48,7 @@ type Level
 
 
 type Winner
-    = Player
+    = Human
     | Opponent
     | Draw
 
@@ -458,7 +458,7 @@ winner move =
                         Draw
 
                     GT ->
-                        Player
+                        Human
                 )
     }
 
@@ -565,7 +565,7 @@ viewTitle model =
                 Nothing ->
                     "Kalahelm"
 
-                Just Player ->
+                Just Human ->
                     "Game over, winner was: Human"
 
                 Just Opponent ->
