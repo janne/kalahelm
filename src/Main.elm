@@ -398,15 +398,15 @@ moveOpponent rnd level move =
                 |> List.map (\m -> ( m, kalahaOpponent m ))
                 |> onlyTheBest
 
-        bestRecursiveMoves : Move -> List Move
-        bestRecursiveMoves move =
-            possibleMoves move
+        bestRecursiveMoves : List Move -> List Move
+        bestRecursiveMoves moves =
+            moves
                 |> List.map
                     (\m ->
                         if m.player == 0 then
                             ( m, kalahaOpponent m )
                         else
-                            case bestRecursiveMoves m |> bestMoves of
+                            case possibleMoves m |> bestRecursiveMoves |> bestMoves of
                                 [] ->
                                     ( m, 0 )
 
@@ -425,7 +425,8 @@ moveOpponent rnd level move =
                         |> bestMoves
 
                 Hard ->
-                    bestRecursiveMoves move
+                    possibleMoves move
+                        |> bestRecursiveMoves
 
         pos =
             rnd % (List.length moves)
