@@ -41,6 +41,12 @@ type alias Move =
     }
 
 
+type Level
+    = Easy
+    | Medium
+    | Hard
+
+
 type Winner
     = Player
     | Opponent
@@ -53,7 +59,7 @@ type alias Model =
     , steps : List (List Pos)
     , aniMove : Maybe Move
     , autoMove : Bool
-    , level : Int
+    , level : Level
     }
 
 
@@ -64,7 +70,7 @@ init =
 
 initModel : Model
 initModel =
-    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing, autoMove = False, level = 1 }
+    { move = initMove, history = [], steps = [ [] ], aniMove = Nothing, autoMove = False, level = Medium }
 
 
 initMove : Move
@@ -95,7 +101,7 @@ type Msg
     | MoveOpponent
     | MoveOpponentRandom Int
     | Press Keyboard.KeyCode
-    | ChangeLevel Int
+    | ChangeLevel Level
     | Tick
     | Undo
     | Restart
@@ -635,14 +641,10 @@ viewButtons model =
                                 "btn btn-default active"
                             else
                                 "btn btn-default"
-                        title = case lvl of
-                            0 -> "Easy"
-                            1 -> "Medium"
-                            _ -> "Hard"
                     in
-                        button [ class cl, Attr.disabled disabled, onClick (ChangeLevel lvl) ] [ text title ]
+                        button [ class cl, Attr.disabled disabled, onClick (ChangeLevel lvl) ] [ lvl |> toString |> text ]
             in
-                div [ class "btn-group" ] (List.map lvlButton [0..2])
+                div [ class "btn-group" ] (List.map lvlButton [Easy, Medium, Hard])
 
         undoButton : Bool -> Html Msg
         undoButton disabled =
