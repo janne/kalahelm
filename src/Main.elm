@@ -614,28 +614,33 @@ viewBoard model =
 viewButtons : Model -> Html Msg
 viewButtons model =
     let
-        nextButton : Bool -> Maybe (Html Msg)
+        nextButton : Bool -> Html Msg
         nextButton disabled =
-            if model.move.winner /= Nothing then
-                Just <| button [ class "btn btn-primary", Attr.disabled disabled, onClick Restart ] [ text "Restart" ]
-            else if model.move.player == 1 then
-                Just <| button [ class "btn btn-primary", Attr.disabled disabled, onClick MoveOpponent ] [ text "Next" ]
+            if model.move.winner == Nothing then
+                button [ class "btn btn-primary pull-left", Attr.disabled (disabled || model.move.player == 0), onClick MoveOpponent ] [ text "Next" ]
             else
-                Nothing
+                button [ class "btn btn-primary pull-left", Attr.disabled disabled, onClick Restart ] [ text "Restart" ]
 
-        undoButton : Bool -> Maybe (Html Msg)
-        undoButton disabled =
-            if List.isEmpty model.history then
-                Nothing
-            else
-                Just <| button [ class "btn btn-default pull-right", Attr.disabled disabled, onClick Undo ] [ text "Undo" ]
-    in
-        div []
-            (List.filterMap identity
-                [ nextButton (animating model)
-                , undoButton (animating model)
+        levelButtons : Bool -> Html Msg
+        levelButtons disabled =
+            div [ class "btn-group" ]
+                [ button [ class "btn btn-default", Attr.disabled disabled ] [ text "Easy" ]
+                , button [ class "btn btn-default active", Attr.disabled disabled ] [ text "Normal" ]
+                , button [ class "btn btn-default", Attr.disabled disabled ] [ text "Hard" ]
                 ]
-            )
+
+        undoButton : Bool -> Html Msg
+        undoButton disabled =
+            button [ class "btn btn-default pull-right", Attr.disabled (disabled || List.isEmpty model.history), onClick Undo ] [ text "Undo" ]
+
+        disabled =
+            animating model
+    in
+        div [ class "center" ]
+            [ nextButton disabled
+            , levelButtons disabled
+            , undoButton disabled
+            ]
 
 
 view : Model -> Html Msg
