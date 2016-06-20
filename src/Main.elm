@@ -594,7 +594,7 @@ viewTitle model =
                 Just Draw ->
                     "Game over, it was a draw"
     in
-        h1 [] [ text <| title model.move.winner ]
+        h2 [] [ text <| title model.move.winner ]
 
 
 viewBoard : Model -> Html Msg
