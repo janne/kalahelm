@@ -290,18 +290,22 @@ set n stones board =
 
 kalaha : Move -> Int
 kalaha move =
-    if move.player == Human then
-        6
-    else
-        13
+    case move.player of
+        Human ->
+            6
+
+        Computer ->
+            13
 
 
 otherKalaha : Move -> Int
 otherKalaha move =
-    if move.player == Human then
-        13
-    else
-        6
+    case move.player of
+        Human ->
+            13
+
+        Computer ->
+            6
 
 
 stonesMissing : Move -> Int
@@ -369,11 +373,12 @@ nextPlayer hole move =
     if hole /= kalaha move then
         { move
             | player =
-                (if move.player == Human then
-                    Computer
-                 else
-                    Human
-                )
+                case move.player of
+                    Human ->
+                        Computer
+
+                    Computer ->
+                        Human
         }
     else
         move
@@ -414,15 +419,17 @@ moveComputer rnd level move =
             moves
                 |> List.map
                     (\m ->
-                        if m.player == Human then
-                            ( m, kalahaComputer m )
-                        else
-                            case possibleMoves m |> bestRecursiveMoves |> bestMoves of
-                                [] ->
-                                    ( m, 0 )
+                        case m.player of
+                            Human ->
+                                ( m, kalahaComputer m )
 
-                                m' :: _ ->
-                                    ( m, kalahaComputer m' )
+                            Computer ->
+                                case possibleMoves m |> bestRecursiveMoves |> bestMoves of
+                                    [] ->
+                                        ( m, 0 )
+
+                                    m' :: _ ->
+                                        ( m, kalahaComputer m' )
                     )
                 |> onlyTheBest
 
@@ -450,10 +457,12 @@ moveComputer rnd level move =
 
 ownHole : Int -> Move -> Bool
 ownHole hole move =
-    if move.player == Human then
-        hole >= 0 && hole < 6
-    else
-        hole >= 7 && hole < 13
+    case move.player of
+        Human ->
+            hole >= 0 && hole < 6
+
+        Computer ->
+            hole >= 7 && hole < 13
 
 
 winner : Move -> Move
