@@ -69,7 +69,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initModel, Cmd.none )
+    ( initModel, Random.generate SetPlayer randomPlayerGen )
 
 
 initModel : Model
@@ -80,6 +80,18 @@ initModel =
 initMove : Move
 initMove =
     { board = initBoard, player = Human, winner = Nothing }
+
+
+randomPlayerGen : Random.Generator Player
+randomPlayerGen =
+    Random.map
+        (\b ->
+            if b then
+                Human
+            else
+                Computer
+        )
+        Random.bool
 
 
 initBoard : Board
@@ -101,7 +113,8 @@ intersection a b =
 
 
 type Msg
-    = NextMove Int
+    = SetPlayer Player
+    | NextMove Int
     | MoveComputer
     | MoveComputerRandom Int
     | Press Keyboard.KeyCode
@@ -114,6 +127,16 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SetPlayer player ->
+            let
+                move =
+                    model.move
+
+                move' =
+                    { move | player = player }
+            in
+                ( { model | move = move', autoMove = (player == Computer) }, Cmd.none )
+
         Restart ->
             ( { initModel
                 | history = model.move :: model.history
@@ -121,7 +144,7 @@ update msg model =
                 , aniMove = intersection model.move initMove
                 , level = model.level
               }
-            , Cmd.none
+            , Random.generate SetPlayer randomPlayerGen
             )
 
         NextMove hole ->
